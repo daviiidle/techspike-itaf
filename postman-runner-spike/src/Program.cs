@@ -2,10 +2,9 @@ using PostmanRunnerSpike.Services;
 
 // Find the project root so this can run from build output folders too.
 var root = FindSpikeRoot();
-// Build absolute paths to the auth-enabled external Postman assets.
-var collectionPath = Path.Combine(root, "external", "auth-postman-repo", "tests", "collections", "AuthTestCollection.postman_collection.json");
-var environmentPath = Path.Combine(root, "external", "auth-postman-repo", "tests", "data", "environment.json");
-var authorizationPath = Path.Combine(root, "external", "auth-postman-repo", "tests", "data", "collection_authorizationservice.json");
+// Point the runner at the external repo root and let it discover collections from there.
+var externalRoot = Path.Combine(root, "external");
+var repositoryName = "auth-postman-repo";
 
 // Wire up services manually for this simple spike.
 var parser = new PostmanCollectionParser();
@@ -15,33 +14,40 @@ var requestExecutor = new RequestExecutor(new HttpClient());
 var runner = new CollectionRunner(parser, environmentResolver, authorizationService, requestExecutor);
 
 // Run against the live public endpoint for this plumbing test.
-var result = await runner.RunAsync(
-    collectionPath,
-    environmentPath,
-    authorizationPath,
+var results = await runner.RunRepositoryAsync(
+    externalRoot,
+    repositoryName,
     mockMode: false);
 
-// Print the same key fields someone would want to verify quickly.
-Console.WriteLine($"Request name: {result.RequestName}");
-Console.WriteLine($"Resolved URL: {result.ResolvedUrl}");
-Console.WriteLine($"Authorization header: {result.AuthorizationHeader}");
-Console.WriteLine($"Status code: {result.StatusCode}");
-Console.WriteLine($"Response body: {result.ResponseBody}");
-
-// Minimal plumbing validation for the public auth call.
-if (result.StatusCode != 200)
+if (results.Count == 0)
 {
-    throw new InvalidOperationException($"Expected status code 200 but got {result.StatusCode}.");
+    throw new InvalidOperationException($"No executable requests were discovered in repository '{repositoryName}'.");
 }
 
-if (!string.Equals(result.AuthorizationHeader, "Bearer spike-test-token", StringComparison.Ordinal))
+foreach (var result in results)
 {
-    throw new InvalidOperationException($"Expected Authorization header 'Bearer spike-test-token' but got '{result.AuthorizationHeader}'.");
-}
+    // Print the same key fields someone would want to verify quickly.
+    Console.WriteLine($"Request name: {result.RequestName}");
+    Console.WriteLine($"Resolved URL: {result.ResolvedUrl}");
+    Console.WriteLine($"Authorization header: {result.AuthorizationHeader}");
+    Console.WriteLine($"Status code: {result.StatusCode}");
+    Console.WriteLine($"Response body: {result.ResponseBody}");
 
-if (!result.ResponseBody.Contains("\"authenticated\": true", StringComparison.Ordinal))
-{
-    throw new InvalidOperationException("Expected response body to contain '\"authenticated\": true'.");
+    // Minimal plumbing validation for the public auth call.
+    if (result.StatusCode != 200)
+    {
+        throw new InvalidOperationException($"Expected status code 200 but got {result.StatusCode}.");
+    }
+
+    if (!string.Equals(result.AuthorizationHeader, "Bearer spike-test-token", StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException($"Expected Authorization header 'Bearer spike-test-token' but got '{result.AuthorizationHeader}'.");
+    }
+
+    if (!result.ResponseBody.Contains("\"authenticated\": true", StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException("Expected response body to contain '\"authenticated\": true'.");
+    }
 }
 
 static string FindSpikeRoot()

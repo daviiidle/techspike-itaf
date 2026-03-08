@@ -6,16 +6,40 @@ namespace PostmanRunnerSpike.Services;
 // Reads a Postman collection file and extracts the first request.
 public sealed class PostmanCollectionParser
 {
-    public ParsedPostmanRequest ParseFirstRequest(string collectionPath)
+    public IReadOnlyList<ParsedPostmanRequest> ParseRequests(string collectionPath)
     {
         // Load and parse the JSON file.
         using var doc = JsonDocument.Parse(File.ReadAllText(collectionPath));
         var root = doc.RootElement;
 
-        // Keep spike scope tiny: only first item in the collection.
-        var item = root.GetProperty("item")[0];
-        var request = item.GetProperty("request");
+        var parsedRequests = new List<ParsedPostmanRequest>();
+        if (!root.TryGetProperty("item", out var items) || items.ValueKind != JsonValueKind.Array)
+        {
+            return parsedRequests;
+        }
 
+        CollectRequests(items, parsedRequests);
+        return parsedRequests;
+    }
+
+    private static void CollectRequests(JsonElement items, List<ParsedPostmanRequest> parsedRequests)
+    {
+        foreach (var item in items.EnumerateArray())
+        {
+            if (item.TryGetProperty("request", out var request))
+            {
+                parsedRequests.Add(ParseRequest(item, request));
+            }
+
+            if (item.TryGetProperty("item", out var nestedItems) && nestedItems.ValueKind == JsonValueKind.Array)
+            {
+                CollectRequests(nestedItems, parsedRequests);
+            }
+        }
+    }
+
+    private static ParsedPostmanRequest ParseRequest(JsonElement item, JsonElement request)
+    {
         // Pull the basic fields needed to run the request.
         var parsed = new ParsedPostmanRequest
         {
@@ -39,7 +63,7 @@ public sealed class PostmanCollectionParser
             }
         }
 
-        // Copy auth configuration if the collection defines one.
+        // Parse request auth metadata for inspection, but runtime auth still comes from the auth config file.
         if (request.TryGetProperty("auth", out var authElement) && authElement.ValueKind == JsonValueKind.Object)
         {
             parsed.AuthType = authElement.TryGetProperty("type", out var authType)

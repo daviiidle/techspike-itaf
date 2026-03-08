@@ -38,4 +38,17 @@ public sealed class EnvironmentResolver
 
         return resolved;
     }
+
+    public Dictionary<string, string> ResolveHeaders(
+        IReadOnlyDictionary<string, string> headers,
+        IReadOnlyDictionary<string, string> variables)
+    {
+        var resolvedHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var header in headers)
+        {
+            resolvedHeaders[header.Key] = Resolve(header.Value, variables);
+        }
+
+        return resolvedHeaders;
+    }
 }

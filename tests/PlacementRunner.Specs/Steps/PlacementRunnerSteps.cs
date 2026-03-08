@@ -13,11 +13,9 @@ public sealed class PlacementRunnerSteps
     // Inputs captured from Given steps.
     private string _fakeRepoFolder = "mock-postman-repo";
     private string _collectionFile = string.Empty;
-    private string _environmentFile = string.Empty;
-    private string _authorizationFile = string.Empty;
     private bool _mockMode;
     // Output captured from When step and asserted in Then steps.
-    private ExecutionResult? _result;
+    private IReadOnlyList<ExecutionResult> _results = Array.Empty<ExecutionResult>();
 
     [Given("fake repo folder \"(.*)\"")]
     public void GivenFakeRepoFolder(string fakeRepoFolder)
@@ -32,15 +30,13 @@ public sealed class PlacementRunnerSteps
     }
 
     [Given("environment file \"(.*)\"")]
-    public void GivenEnvironmentFile(string fileName)
+    public void GivenEnvironmentFile(string _)
     {
-        _environmentFile = fileName;
     }
 
     [Given("authorization file \"(.*)\"")]
-    public void GivenAuthorizationFile(string fileName)
+    public void GivenAuthorizationFile(string _)
     {
-        _authorizationFile = fileName;
     }
 
     [Given("mock mode is enabled")]
@@ -58,13 +54,9 @@ public sealed class PlacementRunnerSteps
     [When("I run the collection runner")]
     public async Task WhenIRunTheCollectionRunner()
     {
-        // Locate test assets under the fake external repo.
+        // Point the runner at the external repo root and let it discover collections on its own.
         var repoRoot = FindRepoRoot();
-        var testsRoot = Path.Combine(repoRoot, "postman-runner-spike", "external", _fakeRepoFolder, "tests");
-
-        var collectionPath = Path.Combine(testsRoot, "collections", _collectionFile);
-        var environmentPath = Path.Combine(testsRoot, "data", _environmentFile);
-        var authorizationPath = Path.Combine(testsRoot, "data", _authorizationFile);
+        var externalRoot = Path.Combine(repoRoot, "postman-runner-spike", "external");
 
         // Build runner stack directly for this spike.
         var parser = new PostmanCollectionParser();
@@ -73,51 +65,50 @@ public sealed class PlacementRunnerSteps
         var requestExecutor = new RequestExecutor(new HttpClient());
         var runner = new CollectionRunner(parser, environmentResolver, authorizationService, requestExecutor);
 
-        // Run end-to-end and store result for assertions.
-        _result = await runner.RunAsync(collectionPath, environmentPath, authorizationPath, _mockMode);
+        // Run the discovered repo and store results for assertions.
+        _results = await runner.RunRepositoryAsync(externalRoot, _fakeRepoFolder, _mockMode);
     }
 
     [Then("the request name should be \"(.*)\"")]
     public void ThenTheRequestNameShouldBe(string expectedRequestName)
     {
-        AssertResult();
-        Assert.That(_result!.RequestName, Is.EqualTo(expectedRequestName));
+        var result = GetResult();
+        Assert.That(result.RequestName, Is.EqualTo(expectedRequestName));
     }
 
     [Then("the resolved URL should be \"(.*)\"")]
     public void ThenTheResolvedUrlShouldBe(string expectedUrl)
     {
-        AssertResult();
-        Assert.That(_result!.ResolvedUrl, Is.EqualTo(expectedUrl));
+        var result = GetResult();
+        Assert.That(result.ResolvedUrl, Is.EqualTo(expectedUrl));
     }
 
     [Then("the status code should be (.*)")]
     public void ThenTheStatusCodeShouldBe(int expectedStatusCode)
     {
-        AssertResult();
-        Assert.That(_result!.StatusCode, Is.EqualTo(expectedStatusCode));
+        var result = GetResult();
+        Assert.That(result.StatusCode, Is.EqualTo(expectedStatusCode));
     }
 
     [Then("the response body should be \"(.*)\"")]
     public void ThenTheResponseBodyShouldBe(string expectedBody)
     {
-        AssertResult();
-        Assert.That(_result!.ResponseBody, Is.EqualTo(expectedBody));
+        var result = GetResult();
+        Assert.That(result.ResponseBody, Is.EqualTo(expectedBody));
     }
 
     [Then("the response body should contain \"(.*)\"")]
     public void ThenTheResponseBodyShouldContain(string expectedFragment)
     {
-        AssertResult();
-        Assert.That(_result!.ResponseBody, Does.Contain(expectedFragment));
+        var result = GetResult();
+        Assert.That(result.ResponseBody, Does.Contain(expectedFragment));
     }
 
     [Then("the JSON response body should contain id (.*)")]
     public void ThenTheJsonResponseBodyShouldContainId(int expectedId)
     {
-        AssertResult();
-
-        using var document = JsonDocument.Parse(_result!.ResponseBody);
+        var result = GetResult();
+        using var document = JsonDocument.Parse(result.ResponseBody);
         var actualId = document.RootElement.GetProperty("id").GetInt32();
 
         Assert.That(actualId, Is.EqualTo(expectedId));
@@ -126,25 +117,28 @@ public sealed class PlacementRunnerSteps
     [Then("the authorization header should be \"(.*)\"")]
     public void ThenTheAuthorizationHeaderShouldBe(string expectedAuthorizationHeader)
     {
-        AssertResult();
-        Assert.That(_result!.AuthorizationHeader, Is.EqualTo(expectedAuthorizationHeader));
+        var result = GetResult();
+        Assert.That(result.AuthorizationHeader, Is.EqualTo(expectedAuthorizationHeader));
     }
 
     [Then("the JSON response body should contain authenticated true")]
     public void ThenTheJsonResponseBodyShouldContainAuthenticatedTrue()
     {
-        AssertResult();
-
-        using var document = JsonDocument.Parse(_result!.ResponseBody);
+        var result = GetResult();
+        using var document = JsonDocument.Parse(result.ResponseBody);
         var authenticated = document.RootElement.GetProperty("authenticated").GetBoolean();
 
         Assert.That(authenticated, Is.True);
     }
 
-    private void AssertResult()
+    private ExecutionResult GetResult()
     {
-        // Guard to keep failure messages clear if When step failed.
-        Assert.That(_result, Is.Not.Null, "Collection runner did not return a result.");
+        Assert.That(_results, Is.Not.Empty, "Collection runner did not return any results.");
+        var result = _results.FirstOrDefault(r =>
+            string.Equals(r.CollectionFileName, _collectionFile, StringComparison.OrdinalIgnoreCase));
+
+        Assert.That(result, Is.Not.Null, $"Collection runner did not return a result for collection '{_collectionFile}'.");
+        return result!;
     }
 
     private static string FindRepoRoot()
