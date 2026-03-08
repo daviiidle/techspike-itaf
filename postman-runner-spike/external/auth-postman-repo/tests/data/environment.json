@@ -1,0 +1,7 @@
+{
+  "_comment": "Public demo environment values for the authentication plumbing test.",
+  "values": [
+    { "key": "ServerName", "value": "httpbin.org" },
+    { "key": "Token", "value": "spike-test-token" }
+  ]
+}

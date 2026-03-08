@@ -7,6 +7,8 @@ public sealed class ExecutionResult
     public string RequestName { get; set; } = string.Empty;
     // URL after variables were replaced.
     public string ResolvedUrl { get; set; } = string.Empty;
+    // Authorization header that was prepared for the outgoing request.
+    public string AuthorizationHeader { get; set; } = string.Empty;
     // Numeric HTTP status code (for example 200).
     public int StatusCode { get; set; }
     // Response text returned by the executor.

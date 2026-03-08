@@ -17,6 +17,12 @@ public sealed class AuthorizationService
         var type = root.GetProperty("type").GetString() ?? string.Empty;
         var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+        // Allow auth to be explicitly disabled for public endpoints.
+        if (string.Equals(type, "none", StringComparison.OrdinalIgnoreCase))
+        {
+            return headers;
+        }
+
         // For this spike we only support bearer token auth.
         if (string.Equals(type, "bearer", StringComparison.OrdinalIgnoreCase))
         {

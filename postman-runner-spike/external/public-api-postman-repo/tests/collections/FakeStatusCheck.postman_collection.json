@@ -1,5 +1,5 @@
 {
-  "_comment": "Second fake collection used only for local spike testing.",
+  "_comment": "Second fake collection used for a real public plumbing test.",
   "info": {
     "name": "Fake Status Collection",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -11,7 +11,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://{{ServerName}}:{{Port}}/status"
+          "raw": "https://{{ServerName}}/posts/1"
         }
       }
     }

@@ -1,0 +1,6 @@
+{
+  "_comment": "Public demo environment values for the second fake repo.",
+  "values": [
+    { "key": "ServerName", "value": "jsonplaceholder.typicode.com" }
+  ]
+}

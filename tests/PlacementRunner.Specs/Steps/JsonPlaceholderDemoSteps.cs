@@ -144,7 +144,7 @@ public sealed class JsonPlaceholderDemoSteps
         var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null)
         {
-            var candidate = Path.Combine(current.FullName, "postman-runner-spike", "external", "fake-postman-repo");
+            var candidate = Path.Combine(current.FullName, "postman-runner-spike", "external");
             if (Directory.Exists(candidate))
             {
                 return current.FullName;
@@ -153,6 +153,6 @@ public sealed class JsonPlaceholderDemoSteps
             current = current.Parent;
         }
 
-        throw new DirectoryNotFoundException("Could not locate repo root containing postman-runner-spike/external/fake-postman-repo.");
+        throw new DirectoryNotFoundException("Could not locate repo root containing postman-runner-spike/external.");
     }
 }

@@ -2,6 +2,7 @@ using NUnit.Framework;
 using PostmanRunnerSpike.Models;
 using PostmanRunnerSpike.Services;
 using Reqnroll;
+using System.Text.Json;
 
 namespace PlacementRunner.Specs.Steps;
 
@@ -10,7 +11,7 @@ namespace PlacementRunner.Specs.Steps;
 public sealed class PlacementRunnerSteps
 {
     // Inputs captured from Given steps.
-    private string _fakeRepoFolder = "fake-postman-repo";
+    private string _fakeRepoFolder = "mock-postman-repo";
     private string _collectionFile = string.Empty;
     private string _environmentFile = string.Empty;
     private string _authorizationFile = string.Empty;
@@ -46,6 +47,12 @@ public sealed class PlacementRunnerSteps
     public void GivenMockModeIsEnabled()
     {
         _mockMode = true;
+    }
+
+    [Given("mock mode is disabled")]
+    public void GivenMockModeIsDisabled()
+    {
+        _mockMode = false;
     }
 
     [When("I run the collection runner")]
@@ -96,6 +103,42 @@ public sealed class PlacementRunnerSteps
     {
         AssertResult();
         Assert.That(_result!.ResponseBody, Is.EqualTo(expectedBody));
+    }
+
+    [Then("the response body should contain \"(.*)\"")]
+    public void ThenTheResponseBodyShouldContain(string expectedFragment)
+    {
+        AssertResult();
+        Assert.That(_result!.ResponseBody, Does.Contain(expectedFragment));
+    }
+
+    [Then("the JSON response body should contain id (.*)")]
+    public void ThenTheJsonResponseBodyShouldContainId(int expectedId)
+    {
+        AssertResult();
+
+        using var document = JsonDocument.Parse(_result!.ResponseBody);
+        var actualId = document.RootElement.GetProperty("id").GetInt32();
+
+        Assert.That(actualId, Is.EqualTo(expectedId));
+    }
+
+    [Then("the authorization header should be \"(.*)\"")]
+    public void ThenTheAuthorizationHeaderShouldBe(string expectedAuthorizationHeader)
+    {
+        AssertResult();
+        Assert.That(_result!.AuthorizationHeader, Is.EqualTo(expectedAuthorizationHeader));
+    }
+
+    [Then("the JSON response body should contain authenticated true")]
+    public void ThenTheJsonResponseBodyShouldContainAuthenticatedTrue()
+    {
+        AssertResult();
+
+        using var document = JsonDocument.Parse(_result!.ResponseBody);
+        var authenticated = document.RootElement.GetProperty("authenticated").GetBoolean();
+
+        Assert.That(authenticated, Is.True);
     }
 
     private void AssertResult()

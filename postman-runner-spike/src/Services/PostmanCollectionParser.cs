@@ -39,6 +39,30 @@ public sealed class PostmanCollectionParser
             }
         }
 
+        // Copy auth configuration if the collection defines one.
+        if (request.TryGetProperty("auth", out var authElement) && authElement.ValueKind == JsonValueKind.Object)
+        {
+            parsed.AuthType = authElement.TryGetProperty("type", out var authType)
+                ? authType.GetString() ?? string.Empty
+                : string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(parsed.AuthType) &&
+                authElement.TryGetProperty(parsed.AuthType, out var authValuesElement) &&
+                authValuesElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var authValue in authValuesElement.EnumerateArray())
+                {
+                    var key = authValue.TryGetProperty("key", out var k) ? k.GetString() : null;
+                    var value = authValue.TryGetProperty("value", out var v) ? v.GetString() : null;
+
+                    if (!string.IsNullOrWhiteSpace(key) && value is not null)
+                    {
+                        parsed.AuthConfiguration[key] = value;
+                    }
+                }
+            }
+        }
+
         // Copy raw body text if present.
         if (request.TryGetProperty("body", out var bodyElement) &&
             bodyElement.TryGetProperty("raw", out var rawBody))

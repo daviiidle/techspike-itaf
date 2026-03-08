@@ -1,8 +1,0 @@
-{
-  "_comment": "Fake environment values for the second fake repo.",
-  "values": [
-    { "key": "ServerName", "value": "demo-host" },
-    { "key": "Port", "value": "7001" },
-    { "key": "Token", "value": "fake-token-two" }
-  ]
-}

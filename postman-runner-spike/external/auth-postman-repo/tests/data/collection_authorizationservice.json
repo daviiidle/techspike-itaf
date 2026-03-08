@@ -1,0 +1,5 @@
+{
+  "_comment": "Bearer auth configuration for the authentication plumbing test.",
+  "type": "bearer",
+  "token": "{{Token}}"
+}

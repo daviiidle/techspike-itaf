@@ -1,0 +1,29 @@
+{
+  "_comment": "Auth-enabled fake repo that targets a public endpoint requiring a bearer header.",
+  "info": {
+    "name": "Auth Test Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "AuthTestRequest",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{Token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://{{ServerName}}/bearer"
+        }
+      }
+    }
+  ]
+}

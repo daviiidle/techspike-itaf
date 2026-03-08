@@ -16,10 +16,24 @@ This repo is a tech spike for two related ideas:
     SubmoduleTool/
   postman-runner-spike/
     external/
-      fake-postman-repo/
+      mock-postman-repo/
         tests/
           collections/
             FakeHealthCheck.postman_collection.json
+          data/
+            environment.json
+            collection_authorizationservice.json
+      public-api-postman-repo/
+        tests/
+          collections/
+            FakeStatusCheck.postman_collection.json
+          data/
+            environment.json
+            collection_authorizationservice.json
+      auth-postman-repo/
+        tests/
+          collections/
+            AuthTestCollection.postman_collection.json
           data/
             environment.json
             collection_authorizationservice.json
@@ -43,10 +57,17 @@ This repo is a tech spike for two related ideas:
 
 There are two different sources of test data in this spike.
 
-`postman-runner-spike/external/fake-postman-repo/tests/...`
-- Holds fake Postman-style assets.
-- Used by the collection runner mock demo.
+`postman-runner-spike/external/mock-postman-repo/tests/...`
+- Holds Postman-style assets for the pure mock collection-runner demo.
 - This represents data that could come from an external automation repository.
+
+`postman-runner-spike/external/public-api-postman-repo/tests/...`
+- Holds Postman-style assets for the live public no-auth plumbing demo.
+- Used by the second collection-runner scenario.
+
+`postman-runner-spike/external/auth-postman-repo/tests/...`
+- Holds Postman-style assets for the live public bearer-auth plumbing demo.
+- Used by the authentication scenario.
 
 `test-config/...`
 - Holds framework-level config that should stay outside the external fake repo.
@@ -66,7 +87,15 @@ There are two different sources of test data in this spike.
 
 `tests/PlacementRunner.Specs/Features/PlacementRunner.feature`
 - Reqnroll feature that runs the collection runner against the fake Postman assets.
-- Uses files from `postman-runner-spike/external/fake-postman-repo/tests/...`.
+- Uses files from `postman-runner-spike/external/mock-postman-repo/tests/...`.
+
+`tests/PlacementRunner.Specs/Features/SecondFakeRepo.feature`
+- Reqnroll feature that runs the collection runner against the public no-auth repo assets.
+- Uses files from `postman-runner-spike/external/public-api-postman-repo/tests/...`.
+
+`tests/PlacementRunner.Specs/Features/AuthFakeRepo.feature`
+- Reqnroll feature that runs the collection runner against the auth-enabled repo assets.
+- Uses files from `postman-runner-spike/external/auth-postman-repo/tests/...`.
 
 `tests/PlacementRunner.Specs/Features/JsonPlaceholderDemo.feature`
 - Reqnroll feature that calls the public demo API at runtime using `RestSharp`.
@@ -135,10 +164,22 @@ dotnet test .\tests\PlacementRunner.Specs\PlacementRunner.Specs.csproj -c Debug 
 ## Which Test Uses Which Data
 
 `PlacementRunner.feature`
-- Uses fake Postman assets under `postman-runner-spike/external/fake-postman-repo/tests/collections`
-- Uses fake environment/auth files under `postman-runner-spike/external/fake-postman-repo/tests/data`
+- Uses Postman assets under `postman-runner-spike/external/mock-postman-repo/tests/collections`
+- Uses environment/auth files under `postman-runner-spike/external/mock-postman-repo/tests/data`
 - Runs through the internal collection runner in mock mode
 - This path still works and passes today
+
+`SecondFakeRepo.feature`
+- Uses Postman assets under `postman-runner-spike/external/public-api-postman-repo/tests/collections`
+- Uses environment/auth files under `postman-runner-spike/external/public-api-postman-repo/tests/data`
+- Runs through the internal collection runner as a live public no-auth call
+- This path also works and passes today
+
+`AuthFakeRepo.feature`
+- Uses Postman assets under `postman-runner-spike/external/auth-postman-repo/tests/collections`
+- Uses environment/auth files under `postman-runner-spike/external/auth-postman-repo/tests/data`
+- Runs through the internal collection runner as a live public bearer-auth call
+- This path also works and passes today
 
 `JsonPlaceholderDemo.feature`
 - Uses separate config from `test-config/demo_api_environment.json`
@@ -152,8 +193,18 @@ dotnet test .\tests\PlacementRunner.Specs\PlacementRunner.Specs.csproj -c Debug 
 Both demo paths are working.
 
 Fake Postman repo path:
-- Reads collection and fake environment/auth files from `postman-runner-spike/external/fake-postman-repo/tests/...`
+- Reads collection and fake environment/auth files from `postman-runner-spike/external/mock-postman-repo/tests/...`
 - Covered by `PlacementRunner.feature`
+- Passes
+
+Public no-auth Postman repo path:
+- Reads collection and environment/auth files from `postman-runner-spike/external/public-api-postman-repo/tests/...`
+- Covered by `SecondFakeRepo.feature`
+- Passes
+
+Public auth Postman repo path:
+- Reads collection and environment/auth files from `postman-runner-spike/external/auth-postman-repo/tests/...`
+- Covered by `AuthFakeRepo.feature`
 - Passes
 
 Separate framework config/secrets path:

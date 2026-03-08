@@ -60,6 +60,9 @@ public sealed class CollectionRunner
         {
             RequestName = parsed.Name,
             ResolvedUrl = resolvedUrl,
+            AuthorizationHeader = resolvedHeaders.TryGetValue("Authorization", out var authorizationHeader)
+                ? authorizationHeader
+                : string.Empty,
             StatusCode = statusCode,
             ResponseBody = content
         };
