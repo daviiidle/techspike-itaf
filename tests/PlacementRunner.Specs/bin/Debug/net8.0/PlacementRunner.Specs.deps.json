@@ -11,6 +11,7 @@
           "Microsoft.NET.Test.Sdk": "17.11.1",
           "NUnit": "4.2.2",
           "Reqnroll.NUnit": "2.3.0",
+          "RestSharp": "112.1.0",
           "postman-runner-spike": "1.0.0"
         },
         "runtime": {
@@ -343,6 +344,14 @@
           }
         }
       },
+      "RestSharp/112.1.0": {
+        "runtime": {
+          "lib/net8.0/RestSharp.dll": {
+            "assemblyVersion": "112.1.0.0",
+            "fileVersion": "112.1.0.0"
+          }
+        }
+      },
       "postman-runner-spike/1.0.0": {
         "runtime": {
           "postman-runner-spike.dll": {
@@ -435,6 +444,13 @@
       "sha512": "sha512-irclOGbvKyk65PqO98IzYCLIsb5TC+QxsvKg5rQ02t3pct9xiN/q468HXEjBeOGWzlkC/an65P2WcNxTmle4Tw==",
       "path": "reqnroll.nunit/2.3.0",
       "hashPath": "reqnroll.nunit.2.3.0.nupkg.sha512"
+    },
+    "RestSharp/112.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-bOUGNZqhhv/QeCXHTKEUil846yBjwWXpzPKjO67kFvaAOoF361z7jLY5BMnuZ6WD2WQRA750sNMcK7MSPCQ5Mg==",
+      "path": "restsharp/112.1.0",
+      "hashPath": "restsharp.112.1.0.nupkg.sha512"
     },
     "postman-runner-spike/1.0.0": {
       "type": "project",

@@ -110,3 +110,4 @@ C:\Users\D\.net tech spike\tests\PlacementRunner.Specs\obj\Debug\net8.0\refint\P
 C:\Users\D\.net tech spike\tests\PlacementRunner.Specs\obj\Debug\net8.0\PlacementRunner.Specs.pdb
 C:\Users\D\.net tech spike\tests\PlacementRunner.Specs\obj\Debug\net8.0\PlacementRunner.Specs.genruntimeconfig.cache
 C:\Users\D\.net tech spike\tests\PlacementRunner.Specs\obj\Debug\net8.0\ref\PlacementRunner.Specs.dll
+C:\Users\D\.net tech spike\tests\PlacementRunner.Specs\bin\Debug\net8.0\RestSharp.dll

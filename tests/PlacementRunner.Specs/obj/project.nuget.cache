@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "Q2K1SDXDGwU=",
+  "dgSpecHash": "A6E/OBSayH0=",
   "success": true,
   "projectFilePath": "C:\\Users\\D\\.net tech spike\\tests\\PlacementRunner.Specs\\PlacementRunner.Specs.csproj",
   "expectedPackageFiles": [
@@ -17,6 +17,7 @@
     "C:\\Users\\D\\.nuget\\packages\\reqnroll\\2.3.0\\reqnroll.2.3.0.nupkg.sha512",
     "C:\\Users\\D\\.nuget\\packages\\reqnroll.nunit\\2.3.0\\reqnroll.nunit.2.3.0.nupkg.sha512",
     "C:\\Users\\D\\.nuget\\packages\\reqnroll.tools.msbuild.generation\\2.3.0\\reqnroll.tools.msbuild.generation.2.3.0.nupkg.sha512",
+    "C:\\Users\\D\\.nuget\\packages\\restsharp\\112.1.0\\restsharp.112.1.0.nupkg.sha512",
     "C:\\Users\\D\\.nuget\\packages\\system.reflection.metadata\\1.6.0\\system.reflection.metadata.1.6.0.nupkg.sha512",
     "C:\\Users\\D\\.nuget\\packages\\system.text.json\\8.0.5\\system.text.json.8.0.5.nupkg.sha512",
     "C:\\Users\\D\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.22\\microsoft.netcore.app.ref.8.0.22.nupkg.sha512",

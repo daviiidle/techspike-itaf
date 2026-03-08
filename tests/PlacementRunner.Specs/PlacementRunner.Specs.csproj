@@ -19,6 +19,7 @@
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageReference Include="Reqnroll.NUnit" Version="2.3.0" />
     <PackageReference Include="Reqnroll.Tools.MsBuild.Generation" Version="2.3.0" />
+    <PackageReference Include="RestSharp" Version="112.1.0" />
   </ItemGroup>
 
   <ItemGroup>
