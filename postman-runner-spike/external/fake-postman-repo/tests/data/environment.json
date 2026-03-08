@@ -1,0 +1,8 @@
+{
+  "_comment": "Fake environment values for variable replacement in the spike.",
+  "values": [
+    { "key": "ServerName", "value": "localhost" },
+    { "key": "Port", "value": "5000" },
+    { "key": "Token", "value": "fake-token" }
+  ]
+}

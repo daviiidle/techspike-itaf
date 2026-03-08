@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Use same runtime family as the spike app. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Auto-import common namespaces like Task, List, and LINQ. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Nullability warnings in test code too. -->
+    <Nullable>enable</Nullable>
+    <!-- Test projects are not meant to be packed/published as NuGet packages. -->
+    <IsPackable>false</IsPackable>
+    <!-- Keep latest language features available in the spike tests. -->
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Required test and Reqnroll packages. -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="4.2.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="Reqnroll.NUnit" Version="2.3.0" />
+    <PackageReference Include="Reqnroll.Tools.MsBuild.Generation" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reuse the application code under test. -->
+    <ProjectReference Include="../../postman-runner-spike/src/postman-runner-spike.csproj" />
+  </ItemGroup>
+</Project>

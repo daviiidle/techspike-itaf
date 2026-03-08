@@ -1,0 +1,15 @@
+C:\Users\D\.net tech spike\tools\SubmoduleTool\bin\Debug\net8.0\SubmoduleTool.exe
+C:\Users\D\.net tech spike\tools\SubmoduleTool\bin\Debug\net8.0\SubmoduleTool.deps.json
+C:\Users\D\.net tech spike\tools\SubmoduleTool\bin\Debug\net8.0\SubmoduleTool.runtimeconfig.json
+C:\Users\D\.net tech spike\tools\SubmoduleTool\bin\Debug\net8.0\SubmoduleTool.dll
+C:\Users\D\.net tech spike\tools\SubmoduleTool\bin\Debug\net8.0\SubmoduleTool.pdb
+C:\Users\D\.net tech spike\tools\SubmoduleTool\obj\Debug\net8.0\SubmoduleTool.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\D\.net tech spike\tools\SubmoduleTool\obj\Debug\net8.0\SubmoduleTool.AssemblyInfoInputs.cache
+C:\Users\D\.net tech spike\tools\SubmoduleTool\obj\Debug\net8.0\SubmoduleTool.AssemblyInfo.cs
+C:\Users\D\.net tech spike\tools\SubmoduleTool\obj\Debug\net8.0\SubmoduleTool.csproj.CoreCompileInputs.cache
+C:\Users\D\.net tech spike\tools\SubmoduleTool\obj\Debug\net8.0\SubmoduleTool.sourcelink.json
+C:\Users\D\.net tech spike\tools\SubmoduleTool\obj\Debug\net8.0\SubmoduleTool.dll
+C:\Users\D\.net tech spike\tools\SubmoduleTool\obj\Debug\net8.0\refint\SubmoduleTool.dll
+C:\Users\D\.net tech spike\tools\SubmoduleTool\obj\Debug\net8.0\SubmoduleTool.pdb
+C:\Users\D\.net tech spike\tools\SubmoduleTool\obj\Debug\net8.0\SubmoduleTool.genruntimeconfig.cache
+C:\Users\D\.net tech spike\tools\SubmoduleTool\obj\Debug\net8.0\ref\SubmoduleTool.dll

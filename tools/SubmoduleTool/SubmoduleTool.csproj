@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Console app for running submodule maintenance commands. -->
+    <OutputType>Exe</OutputType>
+    <!-- Runtime used in this spike. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Reduce boilerplate with global using directives. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Catch null mistakes earlier. -->
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>

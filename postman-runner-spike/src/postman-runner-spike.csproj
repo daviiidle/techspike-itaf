@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Build as a console app so we can run the spike directly. -->
+    <OutputType>Exe</OutputType>
+    <!-- .NET version used by this spike. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Auto-import common using directives (List, Task, etc.). -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Help catch null mistakes during development. -->
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>

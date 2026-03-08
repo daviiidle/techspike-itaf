@@ -1,0 +1,5 @@
+{
+  "_comment": "Fake auth config: token comes from environment variable {{Token}}.",
+  "type": "bearer",
+  "token": "{{Token}}"
+}

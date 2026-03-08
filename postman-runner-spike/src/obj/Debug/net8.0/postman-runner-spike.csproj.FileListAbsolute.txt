@@ -1,0 +1,15 @@
+C:\Users\D\.net tech spike\postman-runner-spike\src\bin\Debug\net8.0\postman-runner-spike.exe
+C:\Users\D\.net tech spike\postman-runner-spike\src\bin\Debug\net8.0\postman-runner-spike.deps.json
+C:\Users\D\.net tech spike\postman-runner-spike\src\bin\Debug\net8.0\postman-runner-spike.runtimeconfig.json
+C:\Users\D\.net tech spike\postman-runner-spike\src\bin\Debug\net8.0\postman-runner-spike.dll
+C:\Users\D\.net tech spike\postman-runner-spike\src\bin\Debug\net8.0\postman-runner-spike.pdb
+C:\Users\D\.net tech spike\postman-runner-spike\src\obj\Debug\net8.0\postman-runner-spike.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\D\.net tech spike\postman-runner-spike\src\obj\Debug\net8.0\postman-runner-spike.AssemblyInfoInputs.cache
+C:\Users\D\.net tech spike\postman-runner-spike\src\obj\Debug\net8.0\postman-runner-spike.AssemblyInfo.cs
+C:\Users\D\.net tech spike\postman-runner-spike\src\obj\Debug\net8.0\postman-runner-spike.csproj.CoreCompileInputs.cache
+C:\Users\D\.net tech spike\postman-runner-spike\src\obj\Debug\net8.0\postman-runner-spike.sourcelink.json
+C:\Users\D\.net tech spike\postman-runner-spike\src\obj\Debug\net8.0\postman-runner-spike.dll
+C:\Users\D\.net tech spike\postman-runner-spike\src\obj\Debug\net8.0\refint\postman-runner-spike.dll
+C:\Users\D\.net tech spike\postman-runner-spike\src\obj\Debug\net8.0\postman-runner-spike.pdb
+C:\Users\D\.net tech spike\postman-runner-spike\src\obj\Debug\net8.0\postman-runner-spike.genruntimeconfig.cache
+C:\Users\D\.net tech spike\postman-runner-spike\src\obj\Debug\net8.0\ref\postman-runner-spike.dll

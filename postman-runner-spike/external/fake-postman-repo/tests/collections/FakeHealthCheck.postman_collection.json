@@ -1,0 +1,19 @@
+{
+  "_comment": "Fake collection used only for local spike testing.",
+  "info": {
+    "name": "Fake Health Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Fake Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://{{ServerName}}:{{Port}}/health"
+        }
+      }
+    }
+  ]
+}

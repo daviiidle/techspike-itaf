@@ -1,0 +1,13 @@
+{
+  "_comment": "Example manifest for adding child repositories as Git submodules.",
+  "submodules": [
+    {
+      "url": "https://github.com/your-org/postman-collection-a.git",
+      "path": "external/postman-collection-a"
+    },
+    {
+      "url": "https://github.com/your-org/itaf-tests-b.git",
+      "path": "external/itaf-tests-b"
+    }
+  ]
+}
