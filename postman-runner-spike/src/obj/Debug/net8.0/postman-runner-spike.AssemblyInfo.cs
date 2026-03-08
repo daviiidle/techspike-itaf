@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("postman-runner-spike")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d9fb30d6a61ae22302f2c8c979994e41080d0c58")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1381dcdee33fca558e3690f43de0e17893bf59f7")]
 [assembly: System.Reflection.AssemblyProductAttribute("postman-runner-spike")]
 [assembly: System.Reflection.AssemblyTitleAttribute("postman-runner-spike")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

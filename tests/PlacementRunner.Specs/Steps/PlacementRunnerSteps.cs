@@ -10,12 +10,19 @@ namespace PlacementRunner.Specs.Steps;
 public sealed class PlacementRunnerSteps
 {
     // Inputs captured from Given steps.
+    private string _fakeRepoFolder = "fake-postman-repo";
     private string _collectionFile = string.Empty;
     private string _environmentFile = string.Empty;
     private string _authorizationFile = string.Empty;
     private bool _mockMode;
     // Output captured from When step and asserted in Then steps.
     private ExecutionResult? _result;
+
+    [Given("fake repo folder \"(.*)\"")]
+    public void GivenFakeRepoFolder(string fakeRepoFolder)
+    {
+        _fakeRepoFolder = fakeRepoFolder;
+    }
 
     [Given("collection file \"(.*)\"")]
     public void GivenCollectionFile(string fileName)
@@ -46,7 +53,7 @@ public sealed class PlacementRunnerSteps
     {
         // Locate test assets under the fake external repo.
         var repoRoot = FindRepoRoot();
-        var testsRoot = Path.Combine(repoRoot, "postman-runner-spike", "external", "fake-postman-repo", "tests");
+        var testsRoot = Path.Combine(repoRoot, "postman-runner-spike", "external", _fakeRepoFolder, "tests");
 
         var collectionPath = Path.Combine(testsRoot, "collections", _collectionFile);
         var environmentPath = Path.Combine(testsRoot, "data", _environmentFile);
@@ -103,7 +110,7 @@ public sealed class PlacementRunnerSteps
         var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null)
         {
-            var candidate = Path.Combine(current.FullName, "postman-runner-spike", "external", "fake-postman-repo");
+            var candidate = Path.Combine(current.FullName, "postman-runner-spike", "external");
             if (Directory.Exists(candidate))
             {
                 return current.FullName;
@@ -112,6 +119,6 @@ public sealed class PlacementRunnerSteps
             current = current.Parent;
         }
 
-        throw new DirectoryNotFoundException("Could not locate repo root containing postman-runner-spike/external/fake-postman-repo.");
+        throw new DirectoryNotFoundException("Could not locate repo root containing postman-runner-spike/external.");
     }
 }

@@ -1,209 +1,202 @@
-# .NET Tech Spike: Managing ITAF/Postman Repositories as Git Submodules
+# .NET Tech Spike: Submodules, Postman Runner, and Reqnroll Demo Tests
 
-This spike keeps external repositories inside one main framework repository by using Git submodules, with orchestration done in C# instead of PowerShell.
+This repo is a tech spike for two related ideas:
 
-## Recommended End-to-End Flow
+1. Managing external automation repositories as Git submodules.
+2. Running a small .NET/Reqnroll automation demo that reads Postman-style assets and also supports a separate config-driven live API test.
 
-Yes, your flow is correct.
-
-1. Pull/initialize submodules first.
-2. Update docs/config (for example `README.md`) in the parent repo.
-3. Run the runner/tests that use Reqnroll feature files + step definitions.
-4. Commit parent changes (including any submodule pointer changes).
-
-Commands:
-
-```bash
-# fresh clone
-git clone --recurse-submodules <PARENT_REPO_URL>
-cd <PARENT_REPO_FOLDER>
-
-# ensure all submodules are present and pinned correctly
-dotnet run --project ./tools/SubmoduleTool -- precondition
-
-# optional: pull latest child-repo branches intentionally
-dotnet run --project ./tools/SubmoduleTool -- precondition --pull-latest
-
-# run spike app directly
-dotnet run --project ./postman-runner-spike/src/postman-runner-spike.csproj
-
-# run Reqnroll/NUnit acceptance test (feature + step defs)
-dotnet test ./tests/PlacementRunner.Specs/PlacementRunner.Specs.csproj
-```
-
-If `--pull-latest` moves any submodules to newer commits, commit the updated pointers in the parent repo:
-
-```bash
-git add external
-git commit -m "Bump submodule pointers after test update"
-git push
-```
-
-## Why Submodules (and not nested repos as plain folders)
-
-If you clone repos into a parent folder as-is (with their own `.git` directories), Git treats each nested repo as an independent repository boundary:
-
-- `git add .` in the parent does not track child files the way you expect.
-- `git commit` in the parent will not include inner repo file-level changes.
-- `git push` from the parent does not push child repo commits.
-
-Result: confusion and missing changes.
-
-Submodules solve this by storing each child repo as a gitlink (a pointer to an exact commit) in the parent repo. The parent tracks exactly which commit each child repo must be at.
-
-## Folder Structure (example)
+## Current Layout
 
 ```text
-main-framework/
+.net tech spike/
   README.md
-  .gitmodules
+  .net tech spike.sln
+  submodules.example.json
   tools/
     SubmoduleTool/
-      SubmoduleTool.csproj
-      Program.cs
-  external/
-    postman-collection-a/   # submodule
-    itaf-tests-b/           # submodule
+  postman-runner-spike/
+    external/
+      fake-postman-repo/
+        tests/
+          collections/
+            FakeHealthCheck.postman_collection.json
+          data/
+            environment.json
+            collection_authorizationservice.json
+    src/
+      ...
+  test-config/
+    demo_api_environment.json
+  test-secrets/
+    demo_api_secrets.json
+  tests/
+    PlacementRunner.Specs/
+      Features/
+        PlacementRunner.feature
+        JsonPlaceholderDemo.feature
+      Steps/
+        PlacementRunnerSteps.cs
+        JsonPlaceholderDemoSteps.cs
 ```
 
-## One-Time Setup in Parent Repo
+## Key Separation
 
-Initialize parent repo:
+There are two different sources of test data in this spike.
 
-```bash
-git init
-git add .
-git commit -m "Initial tech spike scaffold"
-```
+`postman-runner-spike/external/fake-postman-repo/tests/...`
+- Holds fake Postman-style assets.
+- Used by the collection runner mock demo.
+- This represents data that could come from an external automation repository.
 
-Add submodules (example):
+`test-config/...`
+- Holds framework-level config that should stay outside the external fake repo.
+- Used by the live RestSharp demo.
+- This is the cleaner pattern for enterprise automation where environment values and secrets/config are managed separately.
 
-```bash
-# Option A: explicit add commands
-git submodule add https://github.com/your-org/postman-collection-a.git external/postman-collection-a
-git submodule add https://github.com/your-org/itaf-tests-b.git external/itaf-tests-b
+`test-secrets/...`
+- Holds framework-level secret values separate from normal config.
+- Used by the live RestSharp demo for bearer-token style auth.
+- This is where secret material should live instead of inside the external repo.
 
-# Option B: use .NET helper + manifest
-dotnet run --project ./tools/SubmoduleTool -- add-from-config ./submodules.example.json
-```
+## What Exists Today
 
-Commit submodule registration:
+`postman-runner-spike/src`
+- Minimal C# runner that parses a Postman collection, resolves environment variables, applies auth, and executes requests.
+- Supports mock mode so no real HTTP call is required for the main spike flow.
 
-```bash
-git add .gitmodules external
-git commit -m "Add ITAF/Postman repositories as submodules"
-```
+`tests/PlacementRunner.Specs/Features/PlacementRunner.feature`
+- Reqnroll feature that runs the collection runner against the fake Postman assets.
+- Uses files from `postman-runner-spike/external/fake-postman-repo/tests/...`.
 
-## Fresh Clone
+`tests/PlacementRunner.Specs/Features/JsonPlaceholderDemo.feature`
+- Reqnroll feature that calls the public demo API at runtime using `RestSharp`.
+- Reads its base URL and resource path from `test-config/demo_api_environment.json`.
+- Reads its token from `test-secrets/demo_api_secrets.json`.
 
-Recommended single command:
+## Recommended Flow
 
-```bash
+1. Clone the repo with submodules.
+2. Initialize/update submodules.
+3. Run the spike app if you want to validate the core collection runner directly.
+4. Run the Reqnroll spec project to validate both demo scenarios.
+5. If submodule pointers changed, commit those changes in the parent repo.
+
+## Commands
+
+Fresh clone:
+
+```powershell
 git clone --recurse-submodules <PARENT_REPO_URL>
+cd "<PARENT_REPO_FOLDER>"
 ```
 
 If already cloned without submodules:
 
-```bash
+```powershell
 git submodule update --init --recursive
 ```
 
-## .NET Precondition Tool
+Run submodule precondition helper:
 
-Run this before local test runs or CI jobs:
-
-```bash
-# Init + update + status only
-dotnet run --project ./tools/SubmoduleTool -- precondition
-
-# Also pull latest changes in each submodule's current branch
-dotnet run --project ./tools/SubmoduleTool -- precondition --pull-latest
+```powershell
+dotnet run --project .\tools\SubmoduleTool\SubmoduleTool.csproj -- precondition
 ```
 
-## Example Commands You Requested
+Run submodule precondition and intentionally pull latest child repo changes:
 
-Fresh clone:
-
-```bash
-git clone --recurse-submodules <PARENT_REPO_URL>
+```powershell
+dotnet run --project .\tools\SubmoduleTool\SubmoduleTool.csproj -- precondition --pull-latest
 ```
 
-Update all submodules:
+Run the spike console app directly:
 
-```bash
-dotnet run --project ./tools/SubmoduleTool -- init-update
+```powershell
+dotnet run --project .\postman-runner-spike\src\postman-runner-spike.csproj
 ```
 
-Check status of all submodules:
+Run all Reqnroll tests:
 
-```bash
-dotnet run --project ./tools/SubmoduleTool -- status
+```powershell
+dotnet test .\tests\PlacementRunner.Specs\PlacementRunner.Specs.csproj -c Debug
 ```
 
-Pull latest changes in all submodules:
+Run only the Postman runner mock scenario:
 
-```bash
-dotnet run --project ./tools/SubmoduleTool -- pull
+```powershell
+dotnet test .\tests\PlacementRunner.Specs\PlacementRunner.Specs.csproj -c Debug --filter "FullyQualifiedName~PlacementRunner"
 ```
 
-Commit updated submodule pointers in parent:
+Run only the live RestSharp demo scenario:
 
-```bash
-# after submodules moved to newer commits
+```powershell
+dotnet test .\tests\PlacementRunner.Specs\PlacementRunner.Specs.csproj -c Debug --filter "FullyQualifiedName~JsonPlaceholder"
+```
+
+## Which Test Uses Which Data
+
+`PlacementRunner.feature`
+- Uses fake Postman assets under `postman-runner-spike/external/fake-postman-repo/tests/collections`
+- Uses fake environment/auth files under `postman-runner-spike/external/fake-postman-repo/tests/data`
+- Runs through the internal collection runner in mock mode
+- This path still works and passes today
+
+`JsonPlaceholderDemo.feature`
+- Uses separate config from `test-config/demo_api_environment.json`
+- Uses separate secret values from `test-secrets/demo_api_secrets.json`
+- Uses `RestSharp` for a live HTTP GET against a public demo API
+- Does not depend on fake Postman collection files
+- This path also works and passes today
+
+## Current Working State
+
+Both demo paths are working.
+
+Fake Postman repo path:
+- Reads collection and fake environment/auth files from `postman-runner-spike/external/fake-postman-repo/tests/...`
+- Covered by `PlacementRunner.feature`
+- Passes
+
+Separate framework config/secrets path:
+- Reads environment config from `test-config/demo_api_environment.json`
+- Reads token/secret data from `test-secrets/demo_api_secrets.json`
+- Covered by `JsonPlaceholderDemo.feature`
+- Passes
+
+## Parent Repo vs Submodule Repo
+
+Commit inside a submodule when:
+
+- You changed files in that child repository.
+- You need to push those changes to that child repo remote.
+
+Commit in the parent repo when:
+
+- You changed the main framework files.
+- You changed docs, tests, or tools in this repo.
+- You updated the commit pointer for one of the submodules.
+
+If submodule pointers changed:
+
+```powershell
 git add external
 git commit -m "Bump submodule pointers"
 git push
 ```
 
-## Parent Commit vs Submodule Commit
+## Why Submodules Instead of Nested Normal Repos
 
-Commit inside submodule when:
+If you drop child repos into a parent folder as normal nested Git repos, parent Git commands become misleading:
 
-- You changed files in that child repository.
-- You need to push those child changes to its remote.
+- `git add .` in the parent will not track inner repo files the way people expect.
+- `git commit` in the parent will not include child repo commits.
+- `git push` in the parent does not push child repo changes.
 
-Commit in parent when:
+Submodules solve that by making the parent repo track the exact child commit intentionally.
 
-- You changed which child commit should be used.
-- You added/removed submodules.
-- You changed parent files/tools/docs.
+## Notes
 
-Typical flow when updating a child repo:
-
-1. `cd external/postman-collection-a`
-2. Commit + push child changes.
-3. `cd ../../`
-4. `git add external/postman-collection-a`
-5. `git commit -m "Bump postman-collection-a submodule pointer"`
-6. `git push`
-
-## Local Dev Recommendation
-
-- Run the precondition command before builds/tests.
-- Default to pinned submodule commits for reproducibility.
-- Only use `--pull-latest` when intentionally updating dependencies.
-
-## CI Recommendation
-
-- Always initialize submodules in checkout step.
-- Use pinned submodule commits for deterministic builds.
-- If CI pulls latest submodule branches, treat it as a separate non-deterministic lane.
-
-GitHub Actions example:
-
-```yaml
-- uses: actions/checkout@v4
-  with:
-    submodules: recursive
-
-- name: Submodule precondition
-  run: dotnet run --project ./tools/SubmoduleTool -- precondition
-```
-
-## Tech Spike Scope
-
-This is intentionally simple and not production-ready.
-
-- No branch policy enforcement.
-- No auth/token bootstrap logic.
-- No automatic PR creation for submodule bumps.
+- This is a tech spike, not production-ready automation.
+- No real secrets are used.
+- The mock collection runner test and the live RestSharp demo are intentionally separate examples.
+- The live RestSharp demo still uses a fake token value, but the file location and loading pattern now mimic a real enterprise secret/config split.
+- The Reqnroll spec project is included in the solution so Visual Studio can resolve step definitions correctly.

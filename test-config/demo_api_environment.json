@@ -1,5 +1,5 @@
 {
-  "_comment": "Demo API variables kept outside the feature file to mimic enterprise test data management.",
+  "_comment": "Demo API variables kept outside the external fake repo to mimic separate enterprise test configuration.",
   "values": [
     { "key": "DemoApiBaseUrl", "value": "https://jsonplaceholder.typicode.com" },
     { "key": "DemoPostResource", "value": "/posts/1" }

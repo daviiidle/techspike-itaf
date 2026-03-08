@@ -13,8 +13,11 @@ public sealed class JsonPlaceholderDemoSteps
     private string _environmentFile = string.Empty;
     private string _baseUrlVariable = string.Empty;
     private string _resourceVariable = string.Empty;
+    private string _secretsFile = string.Empty;
+    private string _tokenVariable = string.Empty;
     private string _baseUrl = string.Empty;
     private string _resource = string.Empty;
+    private string _token = string.Empty;
     private RestResponse? _response;
 
     [Given("the demo API environment file is \"(.*)\"")]
@@ -35,6 +38,18 @@ public sealed class JsonPlaceholderDemoSteps
         _resourceVariable = resourceVariable;
     }
 
+    [Given("the demo API secrets file is \"(.*)\"")]
+    public void GivenTheDemoApiSecretsFileIs(string secretsFile)
+    {
+        _secretsFile = secretsFile;
+    }
+
+    [Given("the demo API token variable is \"(.*)\"")]
+    public void GivenTheDemoApiTokenVariableIs(string tokenVariable)
+    {
+        _tokenVariable = tokenVariable;
+    }
+
     [When("I send the demo GET request with RestSharp")]
     public async Task WhenISendTheDemoGetRequestWithRestSharp()
     {
@@ -42,6 +57,7 @@ public sealed class JsonPlaceholderDemoSteps
 
         var client = new RestClient(_baseUrl);
         var request = new RestRequest(_resource, Method.Get);
+        request.AddHeader("Authorization", $"Bearer {_token}");
 
         _response = await client.ExecuteAsync(request);
     }
@@ -85,18 +101,27 @@ public sealed class JsonPlaceholderDemoSteps
     private void LoadDemoApiVariables()
     {
         var repoRoot = FindRepoRoot();
-        var environmentPath = Path.Combine(
-            repoRoot,
-            "postman-runner-spike",
-            "external",
-            "fake-postman-repo",
-            "tests",
-            "data",
-            _environmentFile);
+        var environmentPath = Path.Combine(repoRoot, "test-config", _environmentFile);
+        var secretsPath = Path.Combine(repoRoot, "test-secrets", _secretsFile);
 
         Assert.That(File.Exists(environmentPath), Is.True, $"Environment file was not found: {environmentPath}");
+        Assert.That(File.Exists(secretsPath), Is.True, $"Secrets file was not found: {secretsPath}");
 
-        using var document = JsonDocument.Parse(File.ReadAllText(environmentPath));
+        var environmentVariables = LoadVariables(environmentPath);
+        var secretVariables = LoadVariables(secretsPath);
+
+        Assert.That(environmentVariables.TryGetValue(_baseUrlVariable, out var resolvedBaseUrl), Is.True, $"Missing variable: {_baseUrlVariable}");
+        Assert.That(environmentVariables.TryGetValue(_resourceVariable, out var resolvedResource), Is.True, $"Missing variable: {_resourceVariable}");
+        Assert.That(secretVariables.TryGetValue(_tokenVariable, out var resolvedToken), Is.True, $"Missing variable: {_tokenVariable}");
+
+        _baseUrl = resolvedBaseUrl!;
+        _resource = resolvedResource!;
+        _token = resolvedToken!;
+    }
+
+    private static Dictionary<string, string> LoadVariables(string jsonPath)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(jsonPath));
         var values = document.RootElement.GetProperty("values").EnumerateArray();
 
         var variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -111,11 +136,7 @@ public sealed class JsonPlaceholderDemoSteps
             }
         }
 
-        Assert.That(variables.TryGetValue(_baseUrlVariable, out var resolvedBaseUrl), Is.True, $"Missing variable: {_baseUrlVariable}");
-        Assert.That(variables.TryGetValue(_resourceVariable, out var resolvedResource), Is.True, $"Missing variable: {_resourceVariable}");
-
-        _baseUrl = resolvedBaseUrl!;
-        _resource = resolvedResource!;
+        return variables;
     }
 
     private static string FindRepoRoot()
