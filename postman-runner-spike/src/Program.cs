@@ -1,13 +1,17 @@
+using PostmanRunnerSpike.Models;
 using PostmanRunnerSpike.Services;
 
 var root = FindSpikeRoot();
 var externalRoot = Path.Combine(root, "external");
 var repositoryName = "mock-postman-repo";
 
+var variableResolver = new VariableResolver();
+var authorizationService = new AuthorizationService();
 var runner = new CollectionRunner(
     new PostmanCollectionParser(),
-    new VariableResolver(),
-    new AuthorizationService(),
+    variableResolver,
+    new RequestResolver(variableResolver, authorizationService),
+    authorizationService,
     new RequestExecutor(),
     new AssertionEvaluator());
 

@@ -18,15 +18,15 @@ public sealed class AuthorizationService
     }
 
     public AppliedAuthResult ApplyAuth(
-        ParsedPostmanCollection collection,
-        ParsedPostmanRequest request,
-        IReadOnlyDictionary<string, string> variables,
+        PostmanAuth? requestAuth,
+        PostmanAuth? collectionAuth,
         PostmanAuth? externalAuth,
+        IReadOnlyDictionary<string, string> variables,
         IReadOnlyDictionary<string, string> currentHeaders,
         IReadOnlyList<PostmanKeyValueItem> currentQuery,
         VariableResolver variableResolver)
     {
-        var effectiveAuth = ResolveEffectiveAuth(request.Auth, collection.Auth, externalAuth);
+        var effectiveAuth = ResolveEffectiveAuth(requestAuth, collectionAuth, externalAuth);
         if (effectiveAuth is null)
         {
             return new AppliedAuthResult
@@ -147,7 +147,7 @@ public sealed class AuthorizationService
         return auth;
     }
 
-    private static PostmanAuth? ResolveEffectiveAuth(PostmanAuth? requestAuth, PostmanAuth? collectionAuth, PostmanAuth? externalAuth)
+    public PostmanAuth? ResolveEffectiveAuth(PostmanAuth? requestAuth, PostmanAuth? collectionAuth, PostmanAuth? externalAuth)
     {
         var requestType = NormalizeType(requestAuth?.Type);
         if (requestAuth is not null)

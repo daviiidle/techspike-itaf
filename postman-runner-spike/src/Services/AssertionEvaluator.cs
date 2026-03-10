@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using PostmanRunnerSpike.Models;
+using ExecutionContextModel = PostmanRunnerSpike.Models.ExecutionContext;
 
 namespace PostmanRunnerSpike.Services;
 
@@ -12,7 +13,10 @@ public sealed class AssertionEvaluator
     private static readonly Regex EqualityRegex = new(@"pm\.expect\((?<path>.+?)\)\.to\.eql\((?<expected>.+?)\)", RegexOptions.Compiled);
     private static readonly Regex TestNameRegex = new(@"pm\.test\(\s*[""'](?<name>[^""']+)[""']", RegexOptions.Compiled);
 
-    public IReadOnlyList<AssertionResult> Evaluate(ResolvedRequest request, ExecutedRequestResponse response)
+    public IReadOnlyList<AssertionResult> Evaluate(
+        ResolvedRequest request,
+        ExecutedRequestResponse response,
+        ExecutionContextModel? executionContext = null)
     {
         var results = new List<AssertionResult>();
         var jsonAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

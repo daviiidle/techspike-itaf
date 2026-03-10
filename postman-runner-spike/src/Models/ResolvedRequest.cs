@@ -11,7 +11,7 @@ public sealed class ResolvedRequest
     public Dictionary<string, string> Headers { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public PostmanRequestBody? Body { get; set; }
     public string AuthTypeApplied { get; set; } = "none";
-    public bool AllowInvalidCertificates { get; set; }
+    public bool StrictSsl { get; set; } = true;
     public List<string> UnresolvedVariables { get; set; } = [];
     public List<PostmanEventScript> RequestEvents { get; set; } = [];
     public List<PostmanEventScript> CollectionEvents { get; set; } = [];

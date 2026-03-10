@@ -10,67 +10,45 @@ namespace PlacementRunner.Specs.Steps;
 [Binding]
 public sealed class PlacementRunnerSteps
 {
-    // Inputs captured from Given steps.
-    private string _fakeRepoFolder = "mock-postman-repo";
+    private string _repositoryName = "mock-postman-repo";
     private string _collectionFile = string.Empty;
     private bool _mockMode;
-    // Output captured from When step and asserted in Then steps.
     private IReadOnlyList<ExecutionResult> _results = Array.Empty<ExecutionResult>();
 
-    [Given("fake repo folder \"(.*)\"")]
-    public void GivenFakeRepoFolder(string fakeRepoFolder)
+    [Given("the Postman runner targets repository \"(.*)\"")]
+    public void GivenThePostmanRunnerTargetsRepository(string repositoryName)
     {
-        _fakeRepoFolder = fakeRepoFolder;
+        _repositoryName = repositoryName;
     }
 
-    [Given("collection file \"(.*)\"")]
-    public void GivenCollectionFile(string fileName)
+    [Given("collection \"(.*)\"")]
+    public void GivenCollection(string fileName)
     {
         _collectionFile = fileName;
     }
 
-    [Given("environment file \"(.*)\"")]
-    public void GivenEnvironmentFile(string _)
-    {
-    }
-
-    [Given("authorization file \"(.*)\"")]
-    public void GivenAuthorizationFile(string _)
-    {
-    }
-
-    [Given("mock mode is enabled")]
-    public void GivenMockModeIsEnabled()
+    [Given("mock execution is enabled")]
+    public void GivenMockExecutionIsEnabled()
     {
         _mockMode = true;
     }
 
-    [Given("mock mode is disabled")]
-    public void GivenMockModeIsDisabled()
+    [Given("mock execution is disabled")]
+    public void GivenMockExecutionIsDisabled()
     {
         _mockMode = false;
     }
 
-    [When("I run the collection runner")]
-    public async Task WhenIRunTheCollectionRunner()
+    [When("I execute the repository with the Postman runner")]
+    public async Task WhenIExecuteTheRepositoryWithThePostmanRunner()
     {
-        // Point the runner at the external repo root and let it discover collections on its own.
         var repoRoot = FindRepoRoot();
         var externalRoot = Path.Combine(repoRoot, "postman-runner-spike", "external");
-
-        // Build runner stack directly for this spike.
-        var parser = new PostmanCollectionParser();
-        var environmentResolver = new EnvironmentResolver();
-        var authorizationService = new AuthorizationService();
-        var requestExecutor = new RequestExecutor(new HttpClient());
-        var runner = new CollectionRunner(parser, environmentResolver, authorizationService, requestExecutor);
-
-        // Run the discovered repo and store results for assertions.
-        _results = await runner.RunRepositoryAsync(externalRoot, _fakeRepoFolder, _mockMode);
+        _results = await CreateRunner().RunRepositoryAsync(externalRoot, _repositoryName, _mockMode);
     }
 
-    [Then("the request name should be \"(.*)\"")]
-    public void ThenTheRequestNameShouldBe(string expectedRequestName)
+    [Then("the collection result should contain request \"(.*)\"")]
+    public void ThenTheCollectionResultShouldContainRequest(string expectedRequestName)
     {
         var result = GetResult();
         Assert.That(result.RequestName, Is.EqualTo(expectedRequestName));
@@ -104,14 +82,14 @@ public sealed class PlacementRunnerSteps
         Assert.That(result.ResponseBody, Does.Contain(expectedFragment));
     }
 
-    [Then("the JSON response body should contain id (.*)")]
-    public void ThenTheJsonResponseBodyShouldContainId(int expectedId)
+    [Then("the JSON response should contain integer property \"(.*)\" with value (.*)")]
+    public void ThenTheJsonResponseShouldContainIntegerPropertyWithValue(string propertyName, int expectedValue)
     {
         var result = GetResult();
         using var document = JsonDocument.Parse(result.ResponseBody);
-        var actualId = document.RootElement.GetProperty("id").GetInt32();
+        var actualValue = document.RootElement.GetProperty(propertyName).GetInt32();
 
-        Assert.That(actualId, Is.EqualTo(expectedId));
+        Assert.That(actualValue, Is.EqualTo(expectedValue));
     }
 
     [Then("the authorization header should be \"(.*)\"")]
@@ -121,14 +99,14 @@ public sealed class PlacementRunnerSteps
         Assert.That(result.AuthorizationHeader, Is.EqualTo(expectedAuthorizationHeader));
     }
 
-    [Then("the JSON response body should contain authenticated true")]
-    public void ThenTheJsonResponseBodyShouldContainAuthenticatedTrue()
+    [Then("the JSON response should contain boolean property \"(.*)\" with value (.*)")]
+    public void ThenTheJsonResponseShouldContainBooleanPropertyWithValue(string propertyName, bool expectedValue)
     {
         var result = GetResult();
         using var document = JsonDocument.Parse(result.ResponseBody);
-        var authenticated = document.RootElement.GetProperty("authenticated").GetBoolean();
+        var actualValue = document.RootElement.GetProperty(propertyName).GetBoolean();
 
-        Assert.That(authenticated, Is.True);
+        Assert.That(actualValue, Is.EqualTo(expectedValue));
     }
 
     private ExecutionResult GetResult()
@@ -141,9 +119,18 @@ public sealed class PlacementRunnerSteps
         return result!;
     }
 
+    private static CollectionRunner CreateRunner()
+    {
+        var parser = new PostmanCollectionParser();
+        var variableResolver = new EnvironmentResolver();
+        var authorizationService = new AuthorizationService();
+        var requestExecutor = new RequestExecutor(new HttpClient());
+        var requestResolver = new RequestResolver(variableResolver, authorizationService);
+        return new CollectionRunner(parser, variableResolver, requestResolver, authorizationService, requestExecutor);
+    }
+
     private static string FindRepoRoot()
     {
-        // Walk upward from test output until we find the repository root marker.
         var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null)
         {

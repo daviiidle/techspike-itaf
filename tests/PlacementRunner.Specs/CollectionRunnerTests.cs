@@ -350,12 +350,189 @@ public sealed class CollectionRunnerTests
         }
     }
 
+    [Test]
+    public async Task RunRepositoryAsync_applies_variable_precedence_and_request_level_auth_with_noauth_override()
+    {
+        var tempRoot = CreateTempRoot();
+        try
+        {
+            WriteRepository(
+                tempRoot,
+                "repo-d",
+                """
+                {
+                  "values": [
+                    { "key": "Host", "value": "env.example.test" },
+                    { "key": "Shared", "value": "environment" },
+                    { "key": "Password", "value": "env-pass" },
+                    { "key": "Token", "value": "env-token" }
+                  ]
+                }
+                """,
+                """
+                {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{Token}}" }
+                  ]
+                }
+                """,
+                ("AuthAndVariables.postman_collection.json",
+                """
+                {
+                  "info": { "name": "Auth And Variables" },
+                  "variable": [
+                    { "key": "Shared", "value": "collection" },
+                    { "key": "Username", "value": "collection-user" }
+                  ],
+                  "item": [
+                    {
+                      "name": "Folder",
+                      "item": [
+                        {
+                          "name": "Basic Request",
+                          "variable": [
+                            { "key": "Shared", "value": "request" },
+                            { "key": "Username", "value": "request-user" }
+                          ],
+                          "request": {
+                            "method": "GET",
+                            "auth": {
+                              "type": "basic",
+                              "basic": [
+                                { "key": "username", "value": "{{Username}}" },
+                                { "key": "password", "value": "{{Password}}" }
+                              ]
+                            },
+                            "url": {
+                              "raw": "https://{{Host}}/{{Shared}}"
+                            }
+                          }
+                        },
+                        {
+                          "name": "No Auth Request",
+                          "request": {
+                            "method": "GET",
+                            "auth": { "type": "noauth" },
+                            "url": {
+                              "raw": "https://{{Host}}/noauth"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """));
+
+            var seenRequests = new List<HttpRequestMessage>();
+            var requestExecutor = new RequestExecutor((allowInvalidCertificates, cookies) =>
+                new RecordingHandler(request =>
+                {
+                    seenRequests.Add(CloneRequest(request));
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent("ok")
+                    });
+                }));
+
+            var results = await CreateRunner(requestExecutor).RunRepositoryAsync(tempRoot, "repo-d", mockMode: false);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(results, Has.Count.EqualTo(2));
+                Assert.That(results[0].ResolvedUrl, Is.EqualTo("https://env.example.test/request"));
+                Assert.That(results[0].AuthTypeApplied, Is.EqualTo("basic"));
+                Assert.That(results[1].AuthTypeApplied, Is.EqualTo("noauth"));
+                Assert.That(results[1].AuthorizationHeader, Is.Empty);
+                Assert.That(seenRequests[1].Headers.Authorization, Is.Null);
+            });
+
+            var authorization = seenRequests[0].Headers.Authorization;
+            Assert.That(authorization, Is.Not.Null);
+            Assert.That(authorization!.Scheme, Is.EqualTo("Basic"));
+            var credentials = Encoding.UTF8.GetString(Convert.FromBase64String(authorization.Parameter!));
+            Assert.That(credentials, Is.EqualTo("request-user:env-pass"));
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Test]
+    public async Task RunRepositoryAsync_in_mock_mode_reports_supported_and_unsupported_assertions()
+    {
+        var tempRoot = CreateTempRoot();
+        try
+        {
+            WriteRepository(
+                tempRoot,
+                "repo-e",
+                """
+                {
+                  "values": [
+                    { "key": "Host", "value": "mock.example.test" }
+                  ]
+                }
+                """,
+                null,
+                ("MockAssertions.postman_collection.json",
+                """
+                {
+                  "info": { "name": "Mock Assertions" },
+                  "item": [
+                    {
+                      "name": "Assert Mock Response",
+                      "request": {
+                        "method": "GET",
+                        "url": {
+                          "raw": "https://{{Host}}/mock"
+                        }
+                      },
+                      "event": [
+                        {
+                          "listen": "test",
+                          "script": {
+                            "exec": [
+                              "pm.test(\"body contains mock\", function () {",
+                              "pm.expect(pm.response.text()).to.include(\"mock success\");",
+                              "});",
+                              "pm.expect(pm.response.code).to.be.ok;"
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """));
+
+            var results = await CreateRunner(new RequestExecutor()).RunRepositoryAsync(tempRoot, "repo-e", mockMode: true);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(results, Has.Count.EqualTo(1));
+                Assert.That(results[0].Succeeded, Is.True);
+                Assert.That(results[0].AssertionResults.Any(static item => item.Outcome == "passed"), Is.True);
+                Assert.That(results[0].AssertionResults.Any(static item => item.Outcome == "unsupported"), Is.True);
+            });
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
     private static CollectionRunner CreateRunner(RequestExecutor requestExecutor)
     {
+        var variableResolver = new VariableResolver();
+        var authorizationService = new AuthorizationService();
         return new CollectionRunner(
             new PostmanCollectionParser(),
-            new VariableResolver(),
-            new AuthorizationService(),
+            variableResolver,
+            new RequestResolver(variableResolver, authorizationService),
+            authorizationService,
             requestExecutor,
             new AssertionEvaluator());
     }

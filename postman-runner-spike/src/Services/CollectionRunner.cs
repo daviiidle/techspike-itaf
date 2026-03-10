@@ -6,6 +6,7 @@ public sealed class CollectionRunner
 {
     private readonly PostmanCollectionParser _parser;
     private readonly VariableResolver _variableResolver;
+    private readonly RequestResolver _requestResolver;
     private readonly AuthorizationService _authorizationService;
     private readonly RequestExecutor _requestExecutor;
     private readonly AssertionEvaluator _assertionEvaluator;
@@ -13,12 +14,14 @@ public sealed class CollectionRunner
     public CollectionRunner(
         PostmanCollectionParser parser,
         VariableResolver variableResolver,
+        RequestResolver requestResolver,
         AuthorizationService authorizationService,
         RequestExecutor requestExecutor,
         AssertionEvaluator assertionEvaluator)
     {
         _parser = parser;
         _variableResolver = variableResolver;
+        _requestResolver = requestResolver;
         _authorizationService = authorizationService;
         _requestExecutor = requestExecutor;
         _assertionEvaluator = assertionEvaluator;
@@ -27,9 +30,10 @@ public sealed class CollectionRunner
     public CollectionRunner(
         PostmanCollectionParser parser,
         VariableResolver variableResolver,
+        RequestResolver requestResolver,
         AuthorizationService authorizationService,
         RequestExecutor requestExecutor)
-        : this(parser, variableResolver, authorizationService, requestExecutor, new AssertionEvaluator())
+        : this(parser, variableResolver, requestResolver, authorizationService, requestExecutor, new AssertionEvaluator())
     {
     }
 
@@ -120,11 +124,11 @@ public sealed class CollectionRunner
         try
         {
             var collection = _parser.ParseCollection(collectionPath);
-            using var executionContext = _requestExecutor.CreateContext();
+            using var executionContext = _requestExecutor.CreateExecutionContext(environmentVariables, collection, externalAuth);
 
             foreach (var request in collection.Requests)
             {
-                var resolvedRequest = ResolveRequest(collection, request, environmentVariables, externalAuth);
+                var resolvedRequest = _requestResolver.Resolve(collection, request, executionContext);
                 var result = BuildBaseResult(repositoryName, Path.GetFileName(collectionPath), resolvedRequest);
 
                 if (resolvedRequest.UnresolvedVariables.Count > 0)
@@ -132,7 +136,10 @@ public sealed class CollectionRunner
                     result.Succeeded = false;
                     result.ErrorMessage = $"Unresolved variables: {string.Join(", ", resolvedRequest.UnresolvedVariables)}";
                     result.UnresolvedVariables = resolvedRequest.UnresolvedVariables;
-                    result.AssertionResults = _assertionEvaluator.Evaluate(resolvedRequest, new ExecutedRequestResponse()).ToList();
+                    result.AssertionResults = _assertionEvaluator.Evaluate(
+                        resolvedRequest,
+                        new ExecutedRequestResponse(),
+                        executionContext).ToList();
                     results.Add(result);
                     continue;
                 }
@@ -145,7 +152,7 @@ public sealed class CollectionRunner
                 result.Succeeded = response.Succeeded;
                 result.ErrorMessage = response.ErrorMessage;
                 result.ExceptionType = response.ExceptionType;
-                result.AssertionResults = _assertionEvaluator.Evaluate(resolvedRequest, response).ToList();
+                result.AssertionResults = _assertionEvaluator.Evaluate(resolvedRequest, response, executionContext).ToList();
 
                 if (response.Succeeded && result.AssertionResults.Any(static item => string.Equals(item.Outcome, "failed", StringComparison.OrdinalIgnoreCase)))
                 {
@@ -170,189 +177,6 @@ public sealed class CollectionRunner
         }
 
         return results;
-    }
-
-    private ResolvedRequest ResolveRequest(
-        ParsedPostmanCollection collection,
-        ParsedPostmanRequest request,
-        IReadOnlyDictionary<string, string> environmentVariables,
-        PostmanAuth? externalAuth)
-    {
-        var variables = _variableResolver.MergeVariables(request.Variables, collection.Variables, environmentVariables);
-        var resolvedHeaders = ResolveHeaders(request.Headers, variables);
-        var resolvedQuery = ResolveQuery(request.Url.Query, variables);
-        var resolvedBody = ResolveBody(request.Body, variables);
-        var resolvedUrl = ResolveUrl(request.Url, resolvedQuery, variables);
-
-        var authResult = _authorizationService.ApplyAuth(collection, request, variables, externalAuth, resolvedHeaders, resolvedQuery, _variableResolver);
-        var finalUrl = ResolveUrl(request.Url, authResult.Query, variables);
-
-        var unresolved = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        AddUnresolved(unresolved, finalUrl);
-        foreach (var header in authResult.Headers)
-        {
-            AddUnresolved(unresolved, header.Key, header.Value);
-        }
-
-        if (resolvedBody is not null)
-        {
-            AddUnresolved(unresolved, resolvedBody.Raw);
-            foreach (var field in resolvedBody.UrlEncoded)
-            {
-                if (!field.Disabled)
-                {
-                    AddUnresolved(unresolved, field.Key, field.Value);
-                }
-            }
-
-            foreach (var field in resolvedBody.FormData)
-            {
-                if (!field.Disabled)
-                {
-                    AddUnresolved(unresolved, field.Key, field.Value);
-                }
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(authResult.UnsupportedMessage))
-        {
-            unresolved.Add($"unsupported-auth:{authResult.AuthTypeApplied}");
-        }
-
-        return new ResolvedRequest
-        {
-            CollectionName = collection.Name,
-            RequestName = request.Name,
-            FolderPath = request.FolderPath,
-            RequestPath = request.RequestPath,
-            Method = request.Method,
-            ResolvedUrl = finalUrl,
-            Headers = authResult.Headers,
-            Body = resolvedBody,
-            AuthTypeApplied = authResult.AuthTypeApplied,
-            AllowInvalidCertificates = (request.StrictSsl ?? collection.StrictSsl) == false,
-            UnresolvedVariables = unresolved.OrderBy(static item => item, StringComparer.OrdinalIgnoreCase).ToList(),
-            RequestEvents = request.Events,
-            CollectionEvents = collection.Events
-        };
-    }
-
-    private Dictionary<string, string> ResolveHeaders(
-        IEnumerable<PostmanKeyValueItem> headers,
-        IReadOnlyDictionary<string, string> variables)
-    {
-        var resolvedHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var header in headers.Where(static item => !item.Disabled))
-        {
-            resolvedHeaders[header.Key] = _variableResolver.Resolve(header.Value ?? string.Empty, variables);
-        }
-
-        return resolvedHeaders;
-    }
-
-    private List<PostmanKeyValueItem> ResolveQuery(
-        IEnumerable<PostmanKeyValueItem> query,
-        IReadOnlyDictionary<string, string> variables)
-    {
-        return query
-            .Where(static item => !item.Disabled)
-            .Select(item => new PostmanKeyValueItem
-            {
-                Key = _variableResolver.Resolve(item.Key, variables),
-                Value = _variableResolver.Resolve(item.Value ?? string.Empty, variables),
-                Type = item.Type
-            })
-            .ToList();
-    }
-
-    private PostmanRequestBody? ResolveBody(PostmanRequestBody? body, IReadOnlyDictionary<string, string> variables)
-    {
-        if (body is null)
-        {
-            return null;
-        }
-
-        return new PostmanRequestBody
-        {
-            Mode = body.Mode,
-            Raw = body.Raw is null ? null : _variableResolver.Resolve(body.Raw, variables),
-            RawLanguage = body.RawLanguage,
-            UrlEncoded = body.UrlEncoded
-                .Select(item => new PostmanKeyValueItem
-                {
-                    Key = _variableResolver.Resolve(item.Key, variables),
-                    Value = _variableResolver.Resolve(item.Value ?? string.Empty, variables),
-                    Disabled = item.Disabled,
-                    Type = item.Type
-                })
-                .ToList(),
-            FormData = body.FormData
-                .Select(item => new PostmanKeyValueItem
-                {
-                    Key = _variableResolver.Resolve(item.Key, variables),
-                    Value = _variableResolver.Resolve(item.Value ?? string.Empty, variables),
-                    Disabled = item.Disabled,
-                    Type = item.Type
-                })
-                .ToList()
-        };
-    }
-
-    private string ResolveUrl(PostmanUrl url, IReadOnlyList<PostmanKeyValueItem> query, IReadOnlyDictionary<string, string> variables)
-    {
-        var raw = _variableResolver.Resolve(url.Raw, variables);
-        if (!string.IsNullOrWhiteSpace(raw) && raw.Contains("://", StringComparison.Ordinal))
-        {
-            return AppendQuery(raw, query);
-        }
-
-        var protocol = _variableResolver.Resolve(url.Protocol ?? string.Empty, variables);
-        var host = string.Join(".", url.Host.Select(segment => _variableResolver.Resolve(segment, variables)).Where(static item => !string.IsNullOrWhiteSpace(item)));
-        var port = _variableResolver.Resolve(url.Port ?? string.Empty, variables);
-        var pathSegments = new List<string>();
-        foreach (var segment in url.Path)
-        {
-            var resolvedSegment = _variableResolver.Resolve(segment, variables);
-            foreach (var nestedSegment in resolvedSegment.Split('/', StringSplitOptions.RemoveEmptyEntries))
-            {
-                pathSegments.Add(Uri.EscapeDataString(nestedSegment));
-            }
-        }
-
-        var path = string.Join("/", pathSegments);
-
-        var baseUrl = string.Empty;
-        if (!string.IsNullOrWhiteSpace(protocol))
-        {
-            baseUrl = $"{protocol}://";
-        }
-
-        baseUrl += host;
-        if (!string.IsNullOrWhiteSpace(port))
-        {
-            baseUrl += $":{port}";
-        }
-
-        if (!string.IsNullOrWhiteSpace(path))
-        {
-            baseUrl += $"/{path}";
-        }
-
-        return AppendQuery(baseUrl, query);
-    }
-
-    private static string AppendQuery(string baseUrl, IReadOnlyList<PostmanKeyValueItem> query)
-    {
-        var activeQuery = query.Where(static item => !item.Disabled).ToArray();
-        if (activeQuery.Length == 0)
-        {
-            return baseUrl;
-        }
-
-        var separator = baseUrl.Contains('?', StringComparison.Ordinal) ? "&" : "?";
-        var queryString = string.Join("&", activeQuery.Select(static item =>
-            $"{Uri.EscapeDataString(item.Key)}={Uri.EscapeDataString(item.Value ?? string.Empty)}"));
-        return $"{baseUrl}{separator}{queryString}";
     }
 
     private static ExecutionResult BuildBaseResult(string repositoryName, string collectionFileName, ResolvedRequest request)
@@ -400,13 +224,6 @@ public sealed class CollectionRunner
         };
     }
 
-    private void AddUnresolved(HashSet<string> unresolved, params string?[] values)
-    {
-        foreach (var value in _variableResolver.FindUnresolvedVariables(values))
-        {
-            unresolved.Add(value);
-        }
-    }
 }
 
 internal sealed class RepositoryDiscoveryResult

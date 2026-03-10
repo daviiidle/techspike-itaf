@@ -20,16 +20,22 @@ namespace PlacementRunner.Specs.Features
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Reqnroll", "2.0.0.0")]
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     [NUnit.Framework.TestFixtureAttribute()]
-    [NUnit.Framework.DescriptionAttribute("Second fake repo collection runner execution")]
+    [NUnit.Framework.DescriptionAttribute("Postman runner live public API execution")]
     [NUnit.Framework.FixtureLifeCycleAttribute(NUnit.Framework.LifeCycle.InstancePerTestCase)]
-    public partial class SecondFakeRepoCollectionRunnerExecutionFeature
+    [NUnit.Framework.CategoryAttribute("postman-runner")]
+    [NUnit.Framework.CategoryAttribute("live")]
+    [NUnit.Framework.CategoryAttribute("public-api")]
+    public partial class PostmanRunnerLivePublicAPIExecutionFeature
     {
         
         private global::Reqnroll.ITestRunner testRunner;
         
-        private static string[] featureTags = ((string[])(null));
+        private static string[] featureTags = new string[] {
+                "postman-runner",
+                "live",
+                "public-api"};
         
-        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "Features", "Second fake repo collection runner execution", null, global::Reqnroll.ProgrammingLanguage.CSharp, featureTags);
+        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "Features", "Postman runner live public API execution", null, global::Reqnroll.ProgrammingLanguage.CSharp, featureTags);
         
 #line 1 "SecondFakeRepo.feature"
 #line hidden
@@ -83,12 +89,12 @@ namespace PlacementRunner.Specs.Features
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Execute second fake Postman collection as a real plumbing call")]
-        public async System.Threading.Tasks.Task ExecuteSecondFakePostmanCollectionAsARealPlumbingCall()
+        [NUnit.Framework.DescriptionAttribute("Execute the public API sample repository")]
+        public async System.Threading.Tasks.Task ExecuteThePublicAPISampleRepository()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Execute second fake Postman collection as a real plumbing call", null, tagsOfScenario, argumentsOfScenario, featureTags);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Execute the public API sample repository", null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 4
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
@@ -100,34 +106,28 @@ namespace PlacementRunner.Specs.Features
             {
                 await this.ScenarioStartAsync();
 #line 5
-    await testRunner.GivenAsync("fake repo folder \"public-api-postman-repo\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync("the Postman runner targets repository \"public-api-postman-repo\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 6
-    await testRunner.AndAsync("collection file \"FakeStatusCheck.postman_collection.json\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("collection \"FakeStatusCheck.postman_collection.json\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 7
-    await testRunner.AndAsync("environment file \"environment.json\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("mock execution is disabled", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 8
-    await testRunner.AndAsync("authorization file \"collection_authorizationservice.json\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.WhenAsync("I execute the repository with the Postman runner", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 9
-    await testRunner.AndAsync("mock mode is disabled", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.ThenAsync("the collection result should contain request \"Fake Status Check\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 10
-    await testRunner.WhenAsync("I run the collection runner", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
-#line hidden
-#line 11
-    await testRunner.ThenAsync("the request name should be \"Fake Status Check\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
-#line hidden
-#line 12
     await testRunner.AndAsync("the resolved URL should be \"https://jsonplaceholder.typicode.com/posts/1\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 13
+#line 11
     await testRunner.AndAsync("the status code should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 14
-    await testRunner.AndAsync("the JSON response body should contain id 1", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 12
+    await testRunner.AndAsync("the JSON response should contain integer property \"id\" with value 1", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

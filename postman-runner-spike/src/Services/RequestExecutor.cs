@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using PostmanRunnerSpike.Models;
+using ExecutionContextModel = PostmanRunnerSpike.Models.ExecutionContext;
 
 namespace PostmanRunnerSpike.Services;
 
@@ -25,14 +26,23 @@ public sealed class RequestExecutor
         _handlerFactory = handlerFactory;
     }
 
-    public RequestExecutionContext CreateContext()
+    public ExecutionContextModel CreateExecutionContext(
+        IReadOnlyDictionary<string, string> environmentVariables,
+        ParsedPostmanCollection collection,
+        PostmanAuth? externalAuthFallback)
     {
-        return new RequestExecutionContext(_handlerFactory);
+        return new ExecutionContextModel(
+            environmentVariables,
+            collection.Variables,
+            collection.Auth,
+            externalAuthFallback,
+            collection.StrictSsl ?? true,
+            _handlerFactory);
     }
 
     public async Task<ExecutedRequestResponse> ExecuteAsync(
         ResolvedRequest request,
-        RequestExecutionContext context,
+        ExecutionContextModel context,
         bool mockMode,
         CancellationToken cancellationToken = default)
     {
@@ -52,7 +62,7 @@ public sealed class RequestExecutor
         try
         {
             using var httpRequest = BuildRequestMessage(request);
-            using var response = await context.GetClient(request.AllowInvalidCertificates)
+            using var response = await context.GetClient(request.StrictSsl)
                 .SendAsync(httpRequest, cancellationToken);
             stopwatch.Stop();
 
@@ -187,75 +197,5 @@ public sealed class RequestExecutor
                 ? HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
                 : null
         };
-    }
-}
-
-public sealed class RequestExecutionContext : IDisposable
-{
-    private readonly Func<bool, CookieContainer, HttpMessageHandler> _handlerFactory;
-    private readonly CookieContainer _cookieContainer = new();
-    private readonly Dictionary<bool, HttpClient> _clients = [];
-
-    public RequestExecutionContext(Func<bool, CookieContainer, HttpMessageHandler> handlerFactory)
-    {
-        _handlerFactory = handlerFactory;
-    }
-
-    public HttpClient GetClient(bool allowInvalidCertificates)
-    {
-        if (_clients.TryGetValue(allowInvalidCertificates, out var client))
-        {
-            return client;
-        }
-
-        var handler = _handlerFactory(allowInvalidCertificates, _cookieContainer);
-        if (handler is not HttpClientHandler)
-        {
-            handler = new CookieTrackingHandler(_cookieContainer, handler);
-        }
-
-        client = new HttpClient(handler, disposeHandler: true);
-        _clients[allowInvalidCertificates] = client;
-        return client;
-    }
-
-    public void Dispose()
-    {
-        foreach (var client in _clients.Values)
-        {
-            client.Dispose();
-        }
-    }
-}
-
-internal sealed class CookieTrackingHandler : DelegatingHandler
-{
-    private readonly CookieContainer _cookieContainer;
-
-    public CookieTrackingHandler(CookieContainer cookieContainer, HttpMessageHandler innerHandler)
-        : base(innerHandler)
-    {
-        _cookieContainer = cookieContainer;
-    }
-
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        var cookieHeader = _cookieContainer.GetCookieHeader(request.RequestUri!);
-        if (!string.IsNullOrWhiteSpace(cookieHeader))
-        {
-            request.Headers.Remove("Cookie");
-            request.Headers.TryAddWithoutValidation("Cookie", cookieHeader);
-        }
-
-        var response = await base.SendAsync(request, cancellationToken);
-        if (response.Headers.TryGetValues("Set-Cookie", out var setCookieHeaders))
-        {
-            foreach (var header in setCookieHeaders)
-            {
-                _cookieContainer.SetCookies(request.RequestUri!, header);
-            }
-        }
-
-        return response;
     }
 }

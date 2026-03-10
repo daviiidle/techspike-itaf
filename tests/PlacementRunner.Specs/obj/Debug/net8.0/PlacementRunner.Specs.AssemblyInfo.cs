@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PlacementRunner.Specs")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c65d79b01d4eb549b9777507f7d430e27b173855")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a0263f153134255917b25c1f09988e3d2722ae01")]
 [assembly: System.Reflection.AssemblyProductAttribute("PlacementRunner.Specs")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PlacementRunner.Specs")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

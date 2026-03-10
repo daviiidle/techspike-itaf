@@ -20,16 +20,22 @@ namespace PlacementRunner.Specs.Features
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Reqnroll", "2.0.0.0")]
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     [NUnit.Framework.TestFixtureAttribute()]
-    [NUnit.Framework.DescriptionAttribute("Auth fake repo collection runner execution")]
+    [NUnit.Framework.DescriptionAttribute("Postman runner live auth execution")]
     [NUnit.Framework.FixtureLifeCycleAttribute(NUnit.Framework.LifeCycle.InstancePerTestCase)]
-    public partial class AuthFakeRepoCollectionRunnerExecutionFeature
+    [NUnit.Framework.CategoryAttribute("postman-runner")]
+    [NUnit.Framework.CategoryAttribute("live")]
+    [NUnit.Framework.CategoryAttribute("auth")]
+    public partial class PostmanRunnerLiveAuthExecutionFeature
     {
         
         private global::Reqnroll.ITestRunner testRunner;
         
-        private static string[] featureTags = ((string[])(null));
+        private static string[] featureTags = new string[] {
+                "postman-runner",
+                "live",
+                "auth"};
         
-        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "Features", "Auth fake repo collection runner execution", null, global::Reqnroll.ProgrammingLanguage.CSharp, featureTags);
+        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "Features", "Postman runner live auth execution", null, global::Reqnroll.ProgrammingLanguage.CSharp, featureTags);
         
 #line 1 "AuthFakeRepo.feature"
 #line hidden
@@ -83,12 +89,12 @@ namespace PlacementRunner.Specs.Features
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Execute auth-enabled Postman collection as a real plumbing call")]
-        public async System.Threading.Tasks.Task ExecuteAuth_EnabledPostmanCollectionAsARealPlumbingCall()
+        [NUnit.Framework.DescriptionAttribute("Execute the auth sample repository")]
+        public async System.Threading.Tasks.Task ExecuteTheAuthSampleRepository()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Execute auth-enabled Postman collection as a real plumbing call", null, tagsOfScenario, argumentsOfScenario, featureTags);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Execute the auth sample repository", null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 4
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
@@ -100,37 +106,32 @@ namespace PlacementRunner.Specs.Features
             {
                 await this.ScenarioStartAsync();
 #line 5
-    await testRunner.GivenAsync("fake repo folder \"auth-postman-repo\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync("the Postman runner targets repository \"auth-postman-repo\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 6
-    await testRunner.AndAsync("collection file \"AuthTestCollection.postman_collection.json\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("collection \"AuthTestCollection.postman_collection.json\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 7
-    await testRunner.AndAsync("environment file \"environment.json\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("mock execution is disabled", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 8
-    await testRunner.AndAsync("authorization file \"collection_authorizationservice.json\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.WhenAsync("I execute the repository with the Postman runner", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 9
-    await testRunner.AndAsync("mock mode is disabled", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.ThenAsync("the collection result should contain request \"AuthTestRequest\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 10
-    await testRunner.WhenAsync("I run the collection runner", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
-#line hidden
-#line 11
-    await testRunner.ThenAsync("the request name should be \"AuthTestRequest\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
-#line hidden
-#line 12
     await testRunner.AndAsync("the resolved URL should be \"https://httpbin.org/bearer\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 13
+#line 11
     await testRunner.AndAsync("the authorization header should be \"Bearer spike-test-token\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 14
+#line 12
     await testRunner.AndAsync("the status code should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 15
-    await testRunner.AndAsync("the JSON response body should contain authenticated true", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 13
+    await testRunner.AndAsync("the JSON response should contain boolean property \"authenticated\" with value true" +
+                        "", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

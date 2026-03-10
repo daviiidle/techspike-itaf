@@ -20,16 +20,20 @@ namespace PlacementRunner.Specs.Features
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Reqnroll", "2.0.0.0")]
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     [NUnit.Framework.TestFixtureAttribute()]
-    [NUnit.Framework.DescriptionAttribute("Collection runner execution")]
+    [NUnit.Framework.DescriptionAttribute("Postman runner mock execution")]
     [NUnit.Framework.FixtureLifeCycleAttribute(NUnit.Framework.LifeCycle.InstancePerTestCase)]
-    public partial class CollectionRunnerExecutionFeature
+    [NUnit.Framework.CategoryAttribute("postman-runner")]
+    [NUnit.Framework.CategoryAttribute("mock")]
+    public partial class PostmanRunnerMockExecutionFeature
     {
         
         private global::Reqnroll.ITestRunner testRunner;
         
-        private static string[] featureTags = ((string[])(null));
+        private static string[] featureTags = new string[] {
+                "postman-runner",
+                "mock"};
         
-        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "Features", "Collection runner execution", null, global::Reqnroll.ProgrammingLanguage.CSharp, featureTags);
+        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "Features", "Postman runner mock execution", null, global::Reqnroll.ProgrammingLanguage.CSharp, featureTags);
         
 #line 1 "PlacementRunner.feature"
 #line hidden
@@ -83,12 +87,12 @@ namespace PlacementRunner.Specs.Features
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Execute fake Postman collection in mock mode")]
-        public async System.Threading.Tasks.Task ExecuteFakePostmanCollectionInMockMode()
+        [NUnit.Framework.DescriptionAttribute("Execute the sample mock repository")]
+        public async System.Threading.Tasks.Task ExecuteTheSampleMockRepository()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Execute fake Postman collection in mock mode", null, tagsOfScenario, argumentsOfScenario, featureTags);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Execute the sample mock repository", null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 4
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
@@ -100,30 +104,27 @@ namespace PlacementRunner.Specs.Features
             {
                 await this.ScenarioStartAsync();
 #line 5
-    await testRunner.GivenAsync("collection file \"FakeHealthCheck.postman_collection.json\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync("the Postman runner targets repository \"mock-postman-repo\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 6
-    await testRunner.AndAsync("environment file \"environment.json\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("collection \"FakeHealthCheck.postman_collection.json\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 7
-    await testRunner.AndAsync("authorization file \"collection_authorizationservice.json\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("mock execution is enabled", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 8
-    await testRunner.AndAsync("mock mode is enabled", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.WhenAsync("I execute the repository with the Postman runner", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 9
-    await testRunner.WhenAsync("I run the collection runner", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.ThenAsync("the collection result should contain request \"Fake Health Check\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 10
-    await testRunner.ThenAsync("the request name should be \"Fake Health Check\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
-#line hidden
-#line 11
     await testRunner.AndAsync("the resolved URL should be \"http://localhost:5000/health\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 12
+#line 11
     await testRunner.AndAsync("the status code should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 13
+#line 12
     await testRunner.AndAsync("the response body should be \"mock success\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
