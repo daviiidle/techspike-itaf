@@ -3,7 +3,7 @@
 This repo is a tech spike for two related ideas:
 
 1. Managing external automation repositories as Git submodules.
-2. Running a small .NET/Reqnroll automation demo that reads Postman-style assets and also supports a separate config-driven live API test.
+2. Replacing Newman/Postman for our current internal static regression collections with a .NET runner.
 
 ## Current Layout
 
@@ -17,98 +17,182 @@ This repo is a tech spike for two related ideas:
   postman-runner-spike/
     external/
       mock-postman-repo/
-        tests/
-          collections/
-            FakeHealthCheck.postman_collection.json
-          data/
-            environment.json
-            collection_authorizationservice.json
       public-api-postman-repo/
-        tests/
-          collections/
-            FakeStatusCheck.postman_collection.json
-          data/
-            environment.json
-            collection_authorizationservice.json
       auth-postman-repo/
-        tests/
-          collections/
-            AuthTestCollection.postman_collection.json
-          data/
-            environment.json
-            collection_authorizationservice.json
     src/
-      ...
+      Models/
+      Services/
+      Program.cs
   test-config/
     demo_api_environment.json
   test-secrets/
     demo_api_secrets.json
   tests/
     PlacementRunner.Specs/
+      CollectionRunnerTests.cs
       Features/
-        PlacementRunner.feature
-        JsonPlaceholderDemo.feature
       Steps/
-        PlacementRunnerSteps.cs
-        JsonPlaceholderDemoSteps.cs
 ```
 
-## Key Separation
+## What The Postman Runner Does Now
 
-There are two different sources of test data in this spike.
+The spike is no longer limited to a single flat request plus a mandatory auth file. It now supports the static Postman/Newman features we actually use across internal repos:
 
-`postman-runner-spike/external/mock-postman-repo/tests/...`
-- Holds Postman-style assets for the pure mock collection-runner demo.
-- This represents data that could come from an external automation repository.
+- Recursive collection parsing with nested folders and authored item order preserved
+- Request-level auth, collection-level auth, and optional external auth fallback
+- `noauth`, `bearer`, `basic`, `apikey`, and inherit/unspecified auth handling
+- Collection variables, request variables, and environment variables with case-insensitive lookup
+- Variable resolution in URL, query, headers, auth, and body
+- URL reconstruction from Postman URL objects when `url.raw` is absent or incomplete
+- `raw`, `urlencoded`, and `formdata` request bodies
+- Disabled headers, query params, and body fields being skipped
+- Per-collection cookie persistence
+- `protocolProfileBehavior.strictSSL = false`
+- Lightweight Postman test assertion support for the common static patterns in our collections
+- Mock mode that still parses, resolves, applies auth, and produces execution results without real network calls
 
-`postman-runner-spike/external/public-api-postman-repo/tests/...`
-- Holds Postman-style assets for the live public no-auth plumbing demo.
-- Used by the second collection-runner scenario.
+Out of scope by design:
 
-`postman-runner-spike/external/auth-postman-repo/tests/...`
-- Holds Postman-style assets for the live public bearer-auth plumbing demo.
-- Used by the authentication scenario.
+- Full JavaScript/Postman runtime
+- `pm.environment.set(...)`
+- `pm.collectionVariables.set(...)`
+- `pm.variables.set(...)`
+- `postman.setNextRequest(...)`
+- `pm.execution.setNextRequest(...)`
+- `pm.iterationData.get(...)`
+- Dynamic script-driven request/header/url mutation
+- Runtime-generated values such as `CryptoJS` and `Date.now()`
 
-`test-config/...`
-- Holds framework-level config that should stay outside the external fake repo.
-- Used by the live RestSharp demo.
-- This is the cleaner pattern for enterprise automation where environment values and secrets/config are managed separately.
+## Runtime Flow
 
-`test-secrets/...`
-- Holds framework-level secret values separate from normal config.
-- Used by the live RestSharp demo for bearer-token style auth.
-- This is where secret material should live instead of inside the external repo.
+At runtime the runner processes a repo in this order:
 
-## What Exists Today
+1. Discover the repo under `postman-runner-spike/external/<repo-name>`.
+2. Read collections from `tests/collections/*.postman_collection.json`.
+3. Read `tests/data/environment.json` if present.
+4. Read `tests/data/collection_authorizationservice.json` if present.
+5. Parse each collection recursively and preserve exact collection item order.
+6. For each request, merge variables with precedence:
+   request variables -> collection variables -> environment variables
+7. Resolve URL, query params, headers, auth values, and body content.
+8. Resolve auth with precedence:
+   request auth -> collection auth -> external auth -> none
+9. Detect unresolved `{{variables}}`.
+10. If unresolved variables remain, do not execute the request. Record the failure and continue.
+11. Execute the request with the collection-run cookie container and per-request SSL policy.
+12. Evaluate supported Postman test assertions and store pass/fail/unsupported results.
+13. Continue even if a request, collection, or repo fails.
 
-`postman-runner-spike/src`
-- Minimal C# runner that parses a Postman collection, resolves environment variables, applies auth, and executes requests.
-- Supports mock mode so no real HTTP call is required for the main spike flow.
+## What Happens With Multiple Collections
 
-`tests/PlacementRunner.Specs/Features/PlacementRunner.feature`
-- Reqnroll feature that runs the collection runner against the fake Postman assets.
-- Uses files from `postman-runner-spike/external/mock-postman-repo/tests/...`.
+If a repo contains more than one file in `tests/collections`, the runner executes all of them.
 
-`tests/PlacementRunner.Specs/Features/SecondFakeRepo.feature`
-- Reqnroll feature that runs the collection runner against the public no-auth repo assets.
-- Uses files from `postman-runner-spike/external/public-api-postman-repo/tests/...`.
+- Collection files are discovered with `*.postman_collection.json`
+- They are executed in deterministic filename order
+- Requests inside each collection run in the exact order authored in Postman
+- Cookies are shared within one collection run, not across different collection files
+- One bad request does not stop the collection
+- One bad collection does not stop the repo
+- One bad repo does not stop `RunAllRepositoriesAsync`
 
-`tests/PlacementRunner.Specs/Features/AuthFakeRepo.feature`
-- Reqnroll feature that runs the collection runner against the auth-enabled repo assets.
-- Uses files from `postman-runner-spike/external/auth-postman-repo/tests/...`.
+## Repo Conventions
 
-`tests/PlacementRunner.Specs/Features/JsonPlaceholderDemo.feature`
-- Reqnroll feature that calls the public demo API at runtime using `RestSharp`.
-- Reads its base URL and resource path from `test-config/demo_api_environment.json`.
-- Reads its token from `test-secrets/demo_api_secrets.json`.
+Current discovery is intentionally simple and deterministic:
 
-## Recommended Flow
+`tests/collections/*.postman_collection.json`
+- Required for collection execution
 
-1. Clone the repo with submodules.
-2. Initialize/update submodules.
-3. Run the spike app if you want to validate the core collection runner directly.
-4. Run the Reqnroll spec project to validate both demo scenarios.
-5. If submodule pointers changed, commit those changes in the parent repo.
+`tests/data/environment.json`
+- Optional
+- Missing file means no environment variables are loaded
+
+`tests/data/collection_authorizationservice.json`
+- Optional
+- Missing file means no external auth fallback is loaded
+
+The runner does not hardcode service names, hostnames, path suffixes, or port variable names. URLs are fully collection-driven and variable-driven, so patterns such as:
+
+`https://{{ServerName}}.spike.local:{{Port_Auto_PP_http}}/api/v1/CreateCaseModel`
+
+and
+
+`https://{{ServerName}}.spike.local:{{Port_Auto_NOS_http}}/api/v1/NetworkOutageData`
+
+both work as long as the referenced variables resolve for that repo.
+
+## Supported Assertions
+
+The lightweight assertion evaluator currently supports these common patterns:
+
+- `pm.response.to.have.status(...)`
+- `pm.expect(pm.response.text()).to.include("...")`
+- `pm.response.json()`
+- Simple equality assertions on parsed JSON paths such as:
+  `pm.expect(responseJson.data.status).to.eql("Accepted")`
+
+If a test line uses a `pm.*` pattern the evaluator does not understand, it is recorded as `unsupported` rather than being silently ignored.
+
+## Results Produced Per Request
+
+Each executed or skipped request records:
+
+- Repository name
+- Collection file name
+- Collection name
+- Request name
+- Folder path / request path
+- HTTP method
+- Resolved URL
+- Auth type applied
+- Authorization header if one was applied
+- Status code
+- Response body
+- Response headers
+- Duration in ms
+- Success/failure
+- Error message
+- Exception type
+- Unresolved variables
+- Assertion results
+
+## Key Code Paths
+
+`postman-runner-spike/src/Services/PostmanCollectionParser.cs`
+- Parses collections recursively, including collection variables, request variables, auth blocks, URL objects, bodies, and raw event scripts
+
+`postman-runner-spike/src/Services/VariableResolver.cs`
+- Loads environment variables and performs repeated `{{variable}}` replacement plus unresolved-variable detection
+
+`postman-runner-spike/src/Services/AuthorizationService.cs`
+- Applies auth precedence and resolves `bearer`, `basic`, `apikey`, and `noauth`
+
+`postman-runner-spike/src/Services/CollectionRunner.cs`
+- Orchestrates discovery, parsing, resolution, execution, assertions, and failure isolation
+
+`postman-runner-spike/src/Services/RequestExecutor.cs`
+- Builds request content, applies headers correctly, manages cookie persistence, and scopes certificate validation
+
+`postman-runner-spike/src/Services/AssertionEvaluator.cs`
+- Evaluates the supported static Postman assertion patterns
+
+## Tests
+
+The older Reqnroll demo files are still in the repo, but the main verification for the current Postman-runner behaviour is now the focused NUnit coverage in:
+
+[tests/PlacementRunner.Specs/CollectionRunnerTests.cs](/mnt/c/Users/D/.net tech spike/tests/PlacementRunner.Specs/CollectionRunnerTests.cs)
+
+That test suite covers:
+
+- Nested collection parsing and authored execution order
+- Collection auth inheritance and request-level `noauth`
+- Optional external auth
+- URL resolution with repo-specific port variable names
+- Disabled header/query/body fields
+- Raw JSON, `urlencoded`, and `formdata`
+- Cookie persistence
+- `strictSSL:false`
+- Unresolved-variable skip behaviour
+- Assertion evaluation
 
 ## Commands
 
@@ -131,100 +215,36 @@ Run submodule precondition helper:
 dotnet run --project .\tools\SubmoduleTool\SubmoduleTool.csproj -- precondition
 ```
 
-Run submodule precondition and intentionally pull latest child repo changes:
-
-```powershell
-dotnet run --project .\tools\SubmoduleTool\SubmoduleTool.csproj -- precondition --pull-latest
-```
-
 Run the spike console app directly:
 
 ```powershell
 dotnet run --project .\postman-runner-spike\src\postman-runner-spike.csproj
 ```
 
-Run all Reqnroll tests:
+Run the focused Postman-runner tests:
 
 ```powershell
-dotnet test .\tests\PlacementRunner.Specs\PlacementRunner.Specs.csproj -c Debug
+dotnet test .\tests\PlacementRunner.Specs\PlacementRunner.Specs.csproj --filter "FullyQualifiedName~CollectionRunnerTests"
 ```
 
-Run only the Postman runner mock scenario:
+Run all tests:
 
 ```powershell
-dotnet test .\tests\PlacementRunner.Specs\PlacementRunner.Specs.csproj -c Debug --filter "FullyQualifiedName~PlacementRunner"
+dotnet test .\tests\PlacementRunner.Specs\PlacementRunner.Specs.csproj
 ```
-
-Run only the live RestSharp demo scenario:
-
-```powershell
-dotnet test .\tests\PlacementRunner.Specs\PlacementRunner.Specs.csproj -c Debug --filter "FullyQualifiedName~JsonPlaceholder"
-```
-
-## Which Test Uses Which Data
-
-`PlacementRunner.feature`
-- Uses Postman assets under `postman-runner-spike/external/mock-postman-repo/tests/collections`
-- Uses environment/auth files under `postman-runner-spike/external/mock-postman-repo/tests/data`
-- Runs through the internal collection runner in mock mode
-- This path still works and passes today
-
-`SecondFakeRepo.feature`
-- Uses Postman assets under `postman-runner-spike/external/public-api-postman-repo/tests/collections`
-- Uses environment/auth files under `postman-runner-spike/external/public-api-postman-repo/tests/data`
-- Runs through the internal collection runner as a live public no-auth call
-- This path also works and passes today
-
-`AuthFakeRepo.feature`
-- Uses Postman assets under `postman-runner-spike/external/auth-postman-repo/tests/collections`
-- Uses environment/auth files under `postman-runner-spike/external/auth-postman-repo/tests/data`
-- Runs through the internal collection runner as a live public bearer-auth call
-- This path also works and passes today
-
-`JsonPlaceholderDemo.feature`
-- Uses separate config from `test-config/demo_api_environment.json`
-- Uses separate secret values from `test-secrets/demo_api_secrets.json`
-- Uses `RestSharp` for a live HTTP GET against a public demo API
-- Does not depend on fake Postman collection files
-- This path also works and passes today
-
-## Current Working State
-
-Both demo paths are working.
-
-Fake Postman repo path:
-- Reads collection and fake environment/auth files from `postman-runner-spike/external/mock-postman-repo/tests/...`
-- Covered by `PlacementRunner.feature`
-- Passes
-
-Public no-auth Postman repo path:
-- Reads collection and environment/auth files from `postman-runner-spike/external/public-api-postman-repo/tests/...`
-- Covered by `SecondFakeRepo.feature`
-- Passes
-
-Public auth Postman repo path:
-- Reads collection and environment/auth files from `postman-runner-spike/external/auth-postman-repo/tests/...`
-- Covered by `AuthFakeRepo.feature`
-- Passes
-
-Separate framework config/secrets path:
-- Reads environment config from `test-config/demo_api_environment.json`
-- Reads token/secret data from `test-secrets/demo_api_secrets.json`
-- Covered by `JsonPlaceholderDemo.feature`
-- Passes
 
 ## Parent Repo vs Submodule Repo
 
 Commit inside a submodule when:
 
-- You changed files in that child repository.
-- You need to push those changes to that child repo remote.
+- You changed files in that child repository
+- You need to push those changes to that child repo remote
 
 Commit in the parent repo when:
 
-- You changed the main framework files.
-- You changed docs, tests, or tools in this repo.
-- You updated the commit pointer for one of the submodules.
+- You changed the main framework files
+- You changed docs, tests, or tools in this repo
+- You updated the commit pointer for one of the submodules
 
 If submodule pointers changed:
 
@@ -234,20 +254,8 @@ git commit -m "Bump submodule pointers"
 git push
 ```
 
-## Why Submodules Instead of Nested Normal Repos
-
-If you drop child repos into a parent folder as normal nested Git repos, parent Git commands become misleading:
-
-- `git add .` in the parent will not track inner repo files the way people expect.
-- `git commit` in the parent will not include child repo commits.
-- `git push` in the parent does not push child repo changes.
-
-Submodules solve that by making the parent repo track the exact child commit intentionally.
-
 ## Notes
 
-- This is a tech spike, not production-ready automation.
-- No real secrets are used.
-- The mock collection runner test and the live RestSharp demo are intentionally separate examples.
-- The live RestSharp demo still uses a fake token value, but the file location and loading pattern now mimic a real enterprise secret/config split.
-- The Reqnroll spec project is included in the solution so Visual Studio can resolve step definitions correctly.
+- This is still a spike, not a production-ready framework
+- The current runner is intentionally scoped to the static Postman/Newman features we actually use now
+- The code is structured so a richer runtime could be added later without rewriting the parser and models from scratch
