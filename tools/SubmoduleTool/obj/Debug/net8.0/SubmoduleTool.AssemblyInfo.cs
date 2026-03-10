@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SubmoduleTool")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7b450ae48a9f705eceb1f219ddfcf78fad15fbf9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c65d79b01d4eb549b9777507f7d430e27b173855")]
 [assembly: System.Reflection.AssemblyProductAttribute("SubmoduleTool")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SubmoduleTool")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
